@@ -138,8 +138,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      // Chỉ lưu thông tin đăng ký vào localStorage để fake database
-      // KHÔNG set user state và KHÔNG lưu token
       const registeredUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]");
       registeredUsers.push({
         id: Date.now().toString(),
@@ -173,8 +171,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await response.json();
 
       if (response.ok) {
-        // KHÔNG tự động đăng nhập
-        // Chỉ thông báo thành công và chuyển về trang login
         toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
         setLoading(false);
         router.push("/");
