@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import Header from "./components/layout/Header";
-import Footer from "./components/layout/Footer";
-import ScrollToTop from "./components/ui/ScrollToTop";
-import LoginModal from "./auth/LoginModal";
-import RegisterModal from "./auth/RegisterModal";
+import { usePathname } from "next/navigation";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import ScrollToTop from "@/components/ui/ScrollToTop";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./providers/AuthProvider";
 
@@ -14,19 +12,17 @@ export default function AppWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const pathname = usePathname();
+  
+  // Check admin page
+  const isAdminPage = pathname?.startsWith("/admin/");
 
   return (
     <AuthProvider>
       <>
-        <Header
-          onLoginOpen={() => {
-            if (!isRegisterModalOpen) setIsLoginModalOpen(true);
-          }}
-        />
+        {!isAdminPage && <Header />}
         {children}
-        <Footer />
+        {!isAdminPage && <Footer />}
         <ScrollToTop />
         <Toaster
           richColors
@@ -44,22 +40,6 @@ export default function AppWrapper({
               backdropFilter: "blur(10px)",
               boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
             },
-          }}
-        />
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-          onSwitchToRegister={() => {
-            setIsLoginModalOpen(false);
-            setIsRegisterModalOpen(true);
-          }}
-        />
-        <RegisterModal
-          isOpen={isRegisterModalOpen}
-          onClose={() => setIsRegisterModalOpen(false)}
-          onSwitchToLogin={() => {
-            setIsRegisterModalOpen(false);
-            setIsLoginModalOpen(true);
           }}
         />
       </>

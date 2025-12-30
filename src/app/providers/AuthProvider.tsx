@@ -3,12 +3,8 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-type User = {
-  id: string;
-  email: string;
-  name?: string;
-};
+import type { User } from "@/types";
+import { authService } from "@/lib";
 
 type AuthContextType = {
   user: User | null;
@@ -18,20 +14,15 @@ type AuthContextType = {
   register: (data: {
     email: string;
     password: string;
-    firstName: string;
-    lastName: string;
+    fullName: string;
+    phone?: string;
   }) => Promise<boolean>;
   logout: () => void;
   loginWithGoogle: () => void;
   loginWithFacebook: () => void;
 };
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-// Toggle này để chuyển đổi giữa fake data và API thật
-const USE_FAKE_AUTH = true; // Đổi thành false khi muốn dùng API thật
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -39,13 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // fake login
-  const fakeUsers = [
-    { id: "1", email: "admin@gmail.com", password: "admin", name: "Admin" },
-    { id: "2", email: "test@gmail.com", password: "123456", name: "Test User" },
-  ];
-
-  // Load user từ localStorage khi mount component
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const accessToken = localStorage.getItem("accessToken");
@@ -54,6 +38,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
+
+        authService.getProfile()
+          .then(profile => {
+            setUser(profile);
+            localStorage.setItem("user", JSON.stringify(profile));
+          })
+          .catch(err => {
+            console.error("Error fetching profile:", err);
+          });
       } catch (error) {
         console.error("Error parsing user data:", error);
       }
@@ -64,53 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
 
-    // FAKE LOGIN
-    if (USE_FAKE_AUTH) {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      const foundUser = fakeUsers.find(
-        (u) => u.email === data.email && u.password === data.password
-      );
-
-      if (foundUser) {
-        setUser(foundUser);
-        localStorage.setItem("user", JSON.stringify(foundUser));
-        localStorage.setItem("accessToken", "fake-token-" + foundUser.id);
-        setLoading(false);
-        return true;
-      } else {
-        setError("Sai email hoặc mật khẩu!");
-        setLoading(false);
-        return false;
-      }
-    }
-
-    // API THẬT
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem("accessToken", result.accessToken);
-        localStorage.setItem("refreshToken", result.refreshToken);
-        localStorage.setItem("user", JSON.stringify(result.user));
-        setUser(result.user);
-        setLoading(false);
-        return true;
-      } else {
-        setError(result.message || "Sai email hoặc mật khẩu!");
-        setLoading(false);
-        return false;
-      }
+      const response = await authService.login(data);
+      setUser(response.user);
+      toast.success("Đăng nhập thành công!");
+      setLoading(false);
+      return true;
     } catch (err) {
-      setError("Lỗi kết nối server!");
+      const error = err as { response?: { data?: { message?: string } } };
+      const errorMessage = error.response?.data?.message || "Sai email hoặc mật khẩu!";
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error("Login error:", err);
       setLoading(false);
       return false;
@@ -120,89 +77,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (data: {
     email: string;
     password: string;
-    firstName: string;
-    lastName: string;
+    fullName: string;
+    phone?: string;
   }): Promise<boolean> => {
     setLoading(true);
     setError(null);
 
-    // FAKE REGISTER
-    if (USE_FAKE_AUTH) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const exists = fakeUsers.some((u) => u.email === data.email);
-      if (exists) {
-        setError("Email đã được sử dụng!");
-        toast.error("Email đã tồn tại");
-        setLoading(false);
-        return false;
-      }
-
-      const registeredUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]");
-      registeredUsers.push({
-        id: Date.now().toString(),
+    try {
+      await authService.register({
         email: data.email,
         password: data.password,
-        name: `${data.firstName} ${data.lastName}`,
+        fullName: data.fullName,
+        phone: data.phone,
       });
-      localStorage.setItem("registeredUsers", JSON.stringify(registeredUsers));
 
       toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
       setLoading(false);
-      router.push("/");
+      router.push("/login");
       return true;
-    }
-
-    // API THẬT
-    try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-          firstName: data.firstName,
-          lastName: data.lastName,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
-        setLoading(false);
-        router.push("/");
-        return true;
-      } else {
-        setError(result.message || "Email đã được sử dụng!");
-        toast.error(result.message || "Đăng ký thất bại");
-        setLoading(false);
-        return false;
-      }
     } catch (err) {
-      setError("Lỗi kết nối server!");
-      toast.error("Lỗi kết nối server!");
-      console.error("Register error:", err);
+      const error = err as { response?: { data?: { message?: string } } };
+      const errorMessage = error?.response?.data?.message || "Lỗi kết nối server!";
+      console.error("Register error details:", error?.response?.data);
+      setError(errorMessage);
+      toast.error(errorMessage);
       setLoading(false);
       return false;
     }
   };
 
   const loginWithGoogle = () => {
-    window.location.href = `${API_URL}/auth/google`;
+    authService.loginWithGoogle();
   };
 
   const loginWithFacebook = () => {
-    window.location.href = `${API_URL}/auth/facebook`;
+    authService.loginWithFacebook();
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+    
     setUser(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
     toast.success("Đã đăng xuất");
     router.push("/");
   };
