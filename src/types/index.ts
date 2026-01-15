@@ -4,6 +4,7 @@ export type User = {
   email: string;
   fullName?: string;
   phone?: string;
+  dateOfBirth?: string;
   avatar?: string;
   role?: "user" | "admin";
   isActive?: boolean;

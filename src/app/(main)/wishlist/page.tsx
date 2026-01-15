@@ -7,10 +7,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
 type WishlistMovie = {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   slug: string;
-  posterUrl: string;
+  poster?: string;
+  posterUrl?: string;
   rating: number;
   genre: string[];
   duration: number;
@@ -39,7 +41,7 @@ export default function WishlistPage() {
   }, [user, router]);
 
   const removeFromWishlist = (movieId: string) => {
-    const updated = wishlist.filter((m) => m.id !== movieId);
+    const updated = wishlist.filter((m) => (m._id || m.id) !== movieId);
     setWishlist(updated);
     if (user) {
       localStorage.setItem(`wishlist_${user.id}`, JSON.stringify(updated));
@@ -106,12 +108,12 @@ export default function WishlistPage() {
         {/* Wishlist Grid */}
         {wishlist.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {wishlist.map((movie) => (
-              <div key={movie.id} className="group relative">
+            {wishlist.map((movie, index) => (
+              <div key={movie.id || `movie-${index}`} className="group relative">
                 <Link href={`/movies/${movie.slug}`}>
                   <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                     <Image
-                      src={movie.posterUrl || '/assets/images/anh1.jpg'}
+                      src={movie.poster || movie.posterUrl || '/assets/images/anh1.jpg'}
                       alt={movie.title}
                       fill
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
@@ -128,7 +130,7 @@ export default function WishlistPage() {
                     <button
                       onClick={(e) => {
                         e.preventDefault();
-                        removeFromWishlist(movie.id);
+                        removeFromWishlist(movie._id || movie.id || '');
                       }}
                       className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
                       title="Xóa khỏi yêu thích"
@@ -144,7 +146,7 @@ export default function WishlistPage() {
                         {movie.title}
                       </h3>
                       <div className="flex items-center gap-2 text-xs text-gray-300">
-                        <span>{movie.genre[0]}</span>
+                        <span>{movie.genre?.[0] || 'N/A'}</span>
                         <span>•</span>
                         <span>{movie.duration} phút</span>
                       </div>

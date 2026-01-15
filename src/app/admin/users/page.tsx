@@ -22,6 +22,7 @@ type UserData = User & {
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState<UserRole>("all");
   const [filterStatus, setFilterStatus] = useState<UserStatus>("all");
@@ -38,14 +39,18 @@ export default function AdminUsersPage() {
 
   const fetchUsers = useCallback(async () => {
     try {
+      setLoading(true);
       const response = await userService.getAllUsers({
         page,
         limit,
         role: filterRole === "all" ? undefined : filterRole,
         search: searchTerm || undefined,
       });
-      const list = response?.data ?? [];
-      const pagination = response?.meta;
+      
+      // Handle both array response and object with data property
+      const list = Array.isArray(response) ? response : (response?.data ?? []);
+      const pagination = Array.isArray(response) ? null : response?.meta;
+      
       setUsers(list as UserData[]);
       if (pagination) {
         setMeta({
@@ -68,8 +73,10 @@ export default function AdminUsersPage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
       toast.error("Lỗi khi tải danh sách người dùng");
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   }, [filterRole, limit, page, searchTerm]);
 
@@ -79,14 +86,10 @@ export default function AdminUsersPage() {
   }, [fetchUsers]);
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = 
-      user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone?.includes(searchTerm);
     const matchesStatus = filterStatus === "all" || 
       (filterStatus === "active" && !user.isLocked) ||
       (filterStatus === "blocked" && user.isLocked);
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   const pageNumbers = Array.from({ length: meta.totalPages || 1 }, (_, i) => i + 1);
@@ -136,10 +139,10 @@ export default function AdminUsersPage() {
       await userService.updateUser(id, { role: newRole });
       setUsers(users.map(u => u._id === id ? { ...u, role: newRole } : u));
       toast.success(
-        `Đã thay đổi quyền thành ${newRole === "admin" ? "Quản trị viên" : "Người dùng"}! ` +
+        `Đã thay đổi quyền thành ${newRole === "admin" ? "Admin" : "User"}! ` +
         `${newRole === "admin" ? "Người dùng cần đăng xuất và đăng nhập lại để áp dụng quyền mới." : ""}`
       );
-    } catch {
+    } catch (error) {
       toast.error("Lỗi khi thay đổi quyền");
     }
   };
@@ -155,51 +158,6 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Tìm kiếm</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                    onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-                  placeholder="Tên, email, số điện thoại..."
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 pl-11 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Vai trò</label>
-              <select
-                value={filterRole}
-                onChange={(e) => { setFilterRole(e.target.value as UserRole); setPage(1); }}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all" className="bg-gray-800 text-white">Tất cả</option>
-                <option value="user" className="bg-gray-800 text-white">Người dùng</option>
-                <option value="admin" className="bg-gray-800 text-white">Quản trị viên</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Trạng thái</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => { setFilterStatus(e.target.value as UserStatus); setPage(1); }}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all" className="bg-gray-800 text-white">Tất cả</option>
-                <option value="active" className="bg-gray-800 text-white">Hoạt động</option>
-                <option value="blocked" className="bg-gray-800 text-white">Đã khóa</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-md border border-blue-500/30 rounded-xl p-4">
@@ -210,7 +168,7 @@ export default function AdminUsersPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{users.length}</p>
+                <p className="text-2xl font-bold text-white">{meta.total || users.length}</p>
                 <p className="text-sm text-gray-400">Tổng người dùng</p>
               </div>
             </div>
@@ -250,7 +208,7 @@ export default function AdminUsersPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{users.filter(u => u.role === "admin").length}</p>
-                <p className="text-sm text-gray-400">Quản trị viên</p>
+                <p className="text-sm text-gray-400">Admin</p>
               </div>
             </div>
           </div>
@@ -272,7 +230,16 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredUsers.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+                        <p className="text-gray-400 text-lg">Đang tải danh sách người dùng...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
@@ -280,6 +247,7 @@ export default function AdminUsersPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                         </svg>
                         <p className="text-gray-400 text-lg">Không tìm thấy người dùng nào</p>
+                        <p className="text-gray-500 text-sm">Có thể chưa có người dùng nào đăng ký hoặc bộ lọc không khớp</p>
                       </div>
                     </td>
                   </tr>
@@ -310,7 +278,7 @@ export default function AdminUsersPage() {
                               : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
                           } hover:bg-opacity-80 transition-all`}
                         >
-                          {user.role === "admin" ? "Quản trị viên" : "Người dùng"}
+                          {user.role === "admin" ? "Admin" : "User"}
                         </button>
                       </td>
                       <td className="px-6 py-4">

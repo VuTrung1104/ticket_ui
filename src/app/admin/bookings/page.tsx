@@ -139,39 +139,7 @@ export default function AdminBookingsPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Tìm kiếm</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-                  placeholder="Mã đặt vé, tên người dùng, email, phim..."
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 pl-11 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Trạng thái</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => { setFilterStatus(e.target.value as BookingStatus); setPage(1); }}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all" className="bg-gray-800 text-white">Tất cả</option>
-                <option value="confirmed" className="bg-gray-800 text-white">Đã xác nhận</option>
-                <option value="pending" className="bg-gray-800 text-white">Chờ xử lý</option>
-                <option value="cancelled" className="bg-gray-800 text-white">Đã hủy</option>
-              </select>
-            </div>
-          </div>
-        </div>
+
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

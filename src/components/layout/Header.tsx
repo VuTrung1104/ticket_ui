@@ -6,18 +6,30 @@ import { useRouter } from "next/navigation";
 import useScroll from "@/hooks/useScroll";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { movieService } from "@/lib/movieService";
+
+interface SearchResult {
+  _id: string;
+  title: string;
+  slug: string;
+  posterUrl?: string;
+  releaseDate?: string;
+  genres?: string[];
+}
 
 export default function Header() {
   const isScrolled = useScroll(0);
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
 
-  // debounce search input for prefetch or future API search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery.trim());
@@ -26,15 +38,36 @@ export default function Header() {
   }, [searchQuery]);
 
   useEffect(() => {
-    if (debouncedQuery) {
-      router.prefetch(`/movies?search=${encodeURIComponent(debouncedQuery)}`);
-    }
-  }, [debouncedQuery, router]);
+    const fetchSearchResults = async () => {
+      if (!debouncedQuery || debouncedQuery.length < 1) {
+        setSearchResults([]);
+        setShowSearchDropdown(false);
+        return;
+      }
+
+      try {
+        const response = await movieService.getMovies({
+          search: debouncedQuery,
+          limit: 4,
+        });
+        setSearchResults(response.data || []);
+        setShowSearchDropdown(true);
+      } catch (error) {
+        console.error("Search error:", error);
+        setSearchResults([]);
+      }
+    };
+
+    fetchSearchResults();
+  }, [debouncedQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
       }
     };
 
@@ -54,8 +87,15 @@ export default function Header() {
   const handleSearchSubmit = () => {
     const query = searchQuery.trim();
     if (!query) return;
+    setShowSearchDropdown(false);
     router.push(`/movies?search=${encodeURIComponent(query)}`);
     setIsMobileOpen(false);
+  };
+
+  const handleMovieClick = (slug: string) => {
+    setShowSearchDropdown(false);
+    setSearchQuery("");
+    router.push(`/movies/${slug}`);
   };
 
   return (
@@ -95,7 +135,7 @@ export default function Header() {
           </Link>
         </nav>
 
-        <div className="flex-1 max-w-xs mx-2">
+        <div className="flex-1 max-w-xs mx-2" ref={searchRef}>
           <div className="relative">
             <input
               type="text"
@@ -104,6 +144,10 @@ export default function Header() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSearchSubmit();
+                if (e.key === "Escape") setShowSearchDropdown(false);
+              }}
+              onFocus={() => {
+                if (searchResults.length > 0) setShowSearchDropdown(true);
               }}
               className="w-full flex items-center justify-center gap-3 border-2 border-gray-500 py-2 px-6 rounded-lg text-base text-white bg-transparent placeholder:text-white focus:border-white focus:outline-none transition-colors"
             />
@@ -126,6 +170,54 @@ export default function Header() {
                 />
               </svg>
             </button>
+
+            {/* Search Results Dropdown */}
+            {showSearchDropdown && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-gray-900/98 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden max-h-[400px] overflow-y-auto">
+                <div className="p-2">
+                  <div className="text-xs text-gray-400 px-3 py-2 font-semibold">
+                    Danh sách phim
+                  </div>
+                  {searchResults.map((movie) => (
+                    <button
+                      key={movie._id}
+                      onClick={() => handleMovieClick(movie.slug)}
+                      className="w-full flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg transition-colors text-left"
+                    >
+                      <div className="w-12 h-16 bg-gray-800 rounded overflow-hidden flex-shrink-0">
+                        {movie.posterUrl ? (
+                          <img
+                            src={movie.posterUrl}
+                            alt={movie.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate text-sm">{movie.title}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                          {movie.releaseDate && (
+                            <span>{new Date(movie.releaseDate).getFullYear()}</span>
+                          )}
+                          {movie.genres && movie.genres.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span className="truncate">{movie.genres.slice(0, 2).join(", ")}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -147,9 +239,21 @@ export default function Header() {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center gap-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
             >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
-                {getInitials(user.fullName || user.email)}
-              </div>
+              {user.avatar ? (
+                <div className="w-9 h-9 rounded-full overflow-hidden shadow-lg">
+                  <Image
+                    src={user.avatar}
+                    alt="Avatar"
+                    width={36}
+                    height={36}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
+                  {getInitials(user.fullName || user.email)}
+                </div>
+              )}
               <svg 
                 className={`w-4 h-4 text-white transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
                 fill="none" 

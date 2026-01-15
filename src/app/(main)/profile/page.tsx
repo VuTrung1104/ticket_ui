@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { bookingService, userService } from "@/lib";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface BookingData {
   _id?: string;
@@ -51,23 +52,29 @@ interface BookingData {
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"info" | "tickets" | "history">("info");
   const [isEditing, setIsEditing] = useState(false);
   const [userBookings, setUserBookings] = useState<BookingData[]>([]);
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
-  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+  const [editedData, setEditedData] = useState({
+    fullName: "",
+    phone: "",
+    dateOfBirth: "",
+  });
 
   useEffect(() => {
+    if (authLoading) return;
+    
     if (!user) {
       router.push("/login");
       return;
     }
 
     fetchUserData();
-  }, [user, router]);
+  }, [user, router, authLoading]);
 
   const fetchUserData = async () => {
     setLoading(true);
@@ -79,6 +86,19 @@ export default function ProfilePage() {
       if (profile.avatar) {
         setAvatarUrl(profile.avatar);
       }
+      
+      // Convert ISO date to YYYY-MM-DD format for date input
+      let formattedDate = "";
+      if (profile.dateOfBirth) {
+        const date = new Date(profile.dateOfBirth);
+        formattedDate = date.toISOString().split('T')[0];
+      }
+
+      setEditedData({
+        fullName: profile.fullName || "",
+        phone: profile.phone || "",
+        dateOfBirth: formattedDate,
+      });
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
@@ -86,16 +106,77 @@ export default function ProfilePage() {
     }
   };
 
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 500;
+          const MAX_HEIGHT = 500;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                reject(new Error('Canvas to Blob failed'));
+              }
+            },
+            'image/jpeg',
+            0.8
+          );
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const response = await userService.uploadAvatar(file);
-        setAvatarUrl(response.avatarUrl);
-        setShowAvatarMenu(false);
-      } catch (error) {
+        toast.info("Đang xử lý ảnh...");
+
+        const compressedFile = await compressImage(file);
+        
+        toast.info("Đang tải ảnh lên...");
+        const response = await userService.uploadAvatar(compressedFile);
+        setAvatarUrl(response.avatar);
+
+        await refreshUser();
+        
+        toast.success("Cập nhật ảnh đại diện thành công!");
+      } catch (error: any) {
         console.error("Error uploading avatar:", error);
-        alert("Lỗi khi tải ảnh lên");
+        toast.error(error.response?.data?.message || "Lỗi khi tải ảnh lên");
       }
     }
   };
@@ -104,13 +185,40 @@ export default function ProfilePage() {
     try {
       await userService.updateProfile({ avatar: "" });
       setAvatarUrl("");
-      setShowAvatarMenu(false);
+      toast.success("Đã xóa ảnh đại diện");
     } catch (error) {
       console.error("Error removing avatar:", error);
+      toast.error("Lỗi khi xóa ảnh đại diện");
     }
   };
 
-  if (!user || loading) {
+  const handleSaveProfile = async () => {
+    try {
+      // Remove empty fields to avoid validation errors
+      const dataToUpdate: any = {};
+      if (editedData.fullName) dataToUpdate.fullName = editedData.fullName;
+      if (editedData.phone) dataToUpdate.phone = editedData.phone;
+      if (editedData.dateOfBirth) {
+        // Convert to ISO 8601 format
+        const date = new Date(editedData.dateOfBirth);
+        dataToUpdate.dateOfBirth = date.toISOString();
+      }
+      
+      toast.info("Đang lưu thông tin...");
+      await userService.updateProfile(dataToUpdate);
+      
+      toast.success("Cập nhật thông tin thành công!");
+      setIsEditing(false);
+      
+      // Refresh user data
+      await fetchUserData();
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast.error(error.response?.data?.message || "Lỗi khi cập nhật thông tin");
+    }
+  };
+
+  if (authLoading || !user || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-black flex items-center justify-center">
         <div className="text-center">
@@ -138,76 +246,30 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row items-center gap-6">
             {/* Avatar */}
             <div className="relative group">
-              {avatarUrl ? (
-                <div className="w-32 h-32 rounded-full overflow-hidden shadow-2xl ring-4 ring-red-500/30">
-                  <Image 
-                    src={avatarUrl} 
-                    alt="Avatar" 
-                    width={128}
-                    height={128}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white text-4xl font-bold shadow-2xl ring-4 ring-red-500/30">
-                  {getInitials(user.fullName || user.email)}
-                </div>
-              )}
-              
-              {/* Edit Avatar Button */}
-              <button
-                onClick={() => setShowAvatarMenu(!showAvatarMenu)}
-                className="absolute bottom-0 right-0 w-10 h-10 bg-gradient-to-br from-red-600 to-red-500 rounded-full flex items-center justify-center text-white shadow-lg hover:from-red-700 hover:to-red-600 transition-all group-hover:scale-110"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
-
-              {/* Avatar Menu */}
-              {showAvatarMenu && (
-                <div className="absolute top-full mt-2 right-0 bg-gray-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 min-w-[200px]">
-                  <label className="block px-4 py-3 hover:bg-white/10 cursor-pointer transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      className="hidden"
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+                id="avatar-upload"
+              />
+              <label htmlFor="avatar-upload" className="cursor-pointer">
+                {avatarUrl ? (
+                  <div className="w-32 h-32 rounded-full overflow-hidden shadow-2xl ring-4 ring-red-500/30 hover:ring-red-500/50 transition-all">
+                    <Image 
+                      src={avatarUrl} 
+                      alt="Avatar" 
+                      width={128}
+                      height={128}
+                      className="w-full h-full object-cover"
                     />
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-sm">Tải ảnh lên</span>
-                    </div>
-                  </label>
-                  {avatarUrl && (
-                    <button
-                      onClick={handleRemoveAvatar}
-                      className="w-full px-4 py-3 hover:bg-white/10 transition-colors text-left"
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        <span className="text-sm">Xóa ảnh</span>
-                      </div>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowAvatarMenu(false)}
-                    className="w-full px-4 py-3 hover:bg-white/10 transition-colors text-left border-t border-white/10"
-                  >
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      <span className="text-sm text-gray-400">Hủy</span>
-                    </div>
-                  </button>
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white text-4xl font-bold shadow-2xl ring-4 ring-red-500/30 hover:ring-red-500/50 transition-all">
+                    {getInitials(user.fullName || user.email)}
+                  </div>
+                )}
+              </label>
 
               {(user.role === "admin" || user.email === "admin@gmail.com") && (
                 <div className="absolute -bottom-2 -right-2 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg">
@@ -223,15 +285,15 @@ export default function ProfilePage() {
               <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                 <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
                   <span className="text-gray-400 text-sm">Tổng vé:</span>
-                  <span className="ml-2 font-bold text-red-500">{userBookings.length}</span>
+                  <span className="ml-2 font-bold text-red-500">{userBookings?.length || 0}</span>
                 </div>
                 <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
                   <span className="text-gray-400 text-sm">Điểm thưởng:</span>
-                  <span className="ml-2 font-bold text-yellow-500">{userBookings.length * 10}</span>
+                  <span className="ml-2 font-bold text-yellow-500">{(userBookings?.length || 0) * 10}</span>
                 </div>
                 <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/10">
                   <span className="text-gray-400 text-sm">Hạng:</span>
-                  <span className="ml-2 font-bold text-blue-500">{userBookings.length >= 10 ? "Vàng" : userBookings.length >= 5 ? "Bạc" : "Đồng"}</span>
+                  <span className="ml-2 font-bold text-blue-500">{(userBookings?.length || 0) >= 10 ? "Vàng" : (userBookings?.length || 0) >= 5 ? "Bạc" : "Đồng"}</span>
                 </div>
               </div>
             </div>
@@ -294,7 +356,8 @@ export default function ProfilePage() {
                 <label className="block text-sm text-gray-400 mb-2">Họ và tên</label>
                 <input
                   type="text"
-                  defaultValue={user.fullName || ""}
+                  value={editedData.fullName}
+                  onChange={(e) => setEditedData({ ...editedData, fullName: e.target.value })}
                   disabled={!isEditing}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 focus:outline-none disabled:opacity-50"
                 />
@@ -312,7 +375,8 @@ export default function ProfilePage() {
                 <label className="block text-sm text-gray-400 mb-2">Số điện thoại</label>
                 <input
                   type="tel"
-                  defaultValue={user.phone || ""}
+                  value={editedData.phone}
+                  onChange={(e) => setEditedData({ ...editedData, phone: e.target.value })}
                   disabled={!isEditing}
                   placeholder="Chưa cập nhật"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 focus:outline-none disabled:opacity-50"
@@ -322,6 +386,8 @@ export default function ProfilePage() {
                 <label className="block text-sm text-gray-400 mb-2">Ngày sinh</label>
                 <input
                   type="date"
+                  value={editedData.dateOfBirth}
+                  onChange={(e) => setEditedData({ ...editedData, dateOfBirth: e.target.value })}
                   disabled={!isEditing}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 focus:outline-none disabled:opacity-50"
                 />
@@ -329,7 +395,10 @@ export default function ProfilePage() {
             </div>
             {isEditing && (
               <div className="mt-6 flex gap-3">
-                <button className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 rounded-xl font-semibold transition-all">
+                <button 
+                  onClick={handleSaveProfile}
+                  className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 rounded-xl font-semibold transition-all"
+                >
                   Lưu thay đổi
                 </button>
                 <button
@@ -346,7 +415,7 @@ export default function ProfilePage() {
         {activeTab === "tickets" && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold mb-6">Vé của tôi</h2>
-            {userBookings.length === 0 ? (
+            {(userBookings?.length || 0) === 0 ? (
               <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-12 border border-white/10 text-center">
                 <svg className="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
@@ -423,7 +492,7 @@ export default function ProfilePage() {
         {activeTab === "history" && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold mb-6">Lịch sử đặt vé</h2>
-            {userBookings.length === 0 ? (
+            {(userBookings?.length || 0) === 0 ? (
               <div className="text-center py-12">
                 <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />

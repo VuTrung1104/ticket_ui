@@ -42,6 +42,7 @@ export default function TheatersPage() {
         const normalizedTheaters = response.map((t) => ({
           ...t,
           city: mapCityName(t.city),
+          imageUrl: t.image || t.imageUrl,
         }));
 
         setTheaters(normalizedTheaters);

@@ -19,6 +19,7 @@ interface MovieData {
   ageRating?: string;
   genre?: string[];
   genres?: string[];
+  status?: string;
 }
 
 // Helper function to generate slug from title
@@ -38,10 +39,9 @@ const generateSlug = (title: string): string => {
 export default function MoviesPage() {
   const [movies, setMovies] = useState<MovieData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState<"now-showing" | "coming-soon">("now-showing");
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -50,7 +50,6 @@ export default function MoviesPage() {
         const response = await movieService.getMovies({
           page,
           limit: 12,
-          search: searchQuery || undefined,
         });
         setMovies(response.data || []);
         setTotalPages(response.meta?.totalPages || 1);
@@ -63,43 +62,56 @@ export default function MoviesPage() {
     };
 
     fetchMovies();
-  }, [page, searchQuery]);
+  }, [page, activeTab]);
 
+  // Filter movies based on active tab
   const filteredMovies = movies.filter((movie) => {
-    const matchesFilter = filter === "all" || movie.genre?.includes(filter);
-    return matchesFilter;
+    if (activeTab === "now-showing") {
+      return movie.status === "now-showing";
+    } else {
+      return movie.status === "coming-soon";
+    }
   });
 
   return (
     <div className="min-h-screen bg-[#181b24] pt-24 pb-12 px-4">
       <div className="container mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Phim Đang Chiếu</h1>
-          <p className="text-gray-400">Khám phá những bộ phim hot nhất hiện nay</p>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <input
-            type="text"
-            placeholder="Tìm kiếm phim..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
-          />
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-          >
-            <option value="all" className="bg-gray-800 text-white">Tất cả thể loại</option>
-            <option value="Hành động" className="bg-gray-800 text-white">Hành động</option>
-            <option value="Khoa học viễn tưởng" className="bg-gray-800 text-white">Khoa học viễn tưởng</option>
-            <option value="Tâm lý" className="bg-gray-800 text-white">Tâm lý</option>
-            <option value="Kinh dị" className="bg-gray-800 text-white">Kinh dị</option>
-            <option value="Chiến tranh" className="bg-gray-800 text-white">Chiến tranh</option>
-          </select>
+        {/* Tabs */}
+        <div className="mb-8 border-b border-gray-700">
+          <div className="flex gap-8">
+            <button
+              onClick={() => {
+                setActiveTab("now-showing");
+                setPage(1);
+              }}
+              className={`pb-4 text-lg font-semibold transition-colors relative ${
+                activeTab === "now-showing"
+                  ? "text-red-500"
+                  : "text-gray-400 hover:text-gray-300"
+              }`}
+            >
+              Phim Đang Chiếu
+              {activeTab === "now-showing" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("coming-soon");
+                setPage(1);
+              }}
+              className={`pb-4 text-lg font-semibold transition-colors relative ${
+                activeTab === "coming-soon"
+                  ? "text-red-500"
+                  : "text-gray-400 hover:text-gray-300"
+              }`}
+            >
+              Phim Sắp Chiếu
+              {activeTab === "coming-soon" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500"></div>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Movies Grid */}
@@ -125,7 +137,11 @@ export default function MoviesPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-400 text-lg">Không tìm thấy phim phù hợp</p>
+              <p className="text-gray-400 text-lg">
+                {activeTab === "now-showing" 
+                  ? "Không có phim đang chiếu" 
+                  : "Không có phim sắp chiếu"}
+              </p>
             </div>
           )}
         </div>

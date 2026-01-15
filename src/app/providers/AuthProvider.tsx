@@ -20,13 +20,14 @@ type AuthContextType = {
   logout: () => void;
   loginWithGoogle: () => void;
   loginWithFacebook: () => void;
+  refreshUser: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -46,10 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           })
           .catch(err => {
             console.error("Error fetching profile:", err);
+            // If profile fetch fails, clear invalid data
+            localStorage.removeItem("user");
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            setUser(null);
+          })
+          .finally(() => {
+            setLoading(false);
           });
       } catch (error) {
         console.error("Error parsing user data:", error);
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
   }, []);
 
@@ -126,6 +138,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/");
   };
 
+  const refreshUser = async () => {
+    try {
+      const profile = await authService.getProfile();
+      setUser(profile);
+      localStorage.setItem("user", JSON.stringify(profile));
+    } catch (error) {
+      console.error("Error refreshing user:", error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -137,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         loginWithGoogle,
         loginWithFacebook,
+        refreshUser,
       }}
     >
       {children}

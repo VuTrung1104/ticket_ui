@@ -20,6 +20,10 @@ export default function AdminMoviesPage() {
     hasNextPage: false,
     hasPrevPage: false,
   });
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; movie: { id: string; title: string } | null }>({
+    isOpen: false,
+    movie: null,
+  });
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -72,15 +76,24 @@ export default function AdminMoviesPage() {
   const pageNumbers = Array.from({ length: meta.totalPages || 1 }, (_, i) => i + 1);
 
   const handleDelete = async (id: string, title: string) => {
-    if (confirm(`Bạn có chắc muốn xóa phim "${title}"?`)) {
-      try {
-        await movieService.deleteMovie(id);
-        setMovies(movies.filter(m => m._id !== id));
-        toast.success("Đã xóa phim thành công!");
-      } catch {
-        toast.error("Không thể xóa phim");
-      }
+    setDeleteModal({ isOpen: true, movie: { id, title } });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.movie) return;
+    
+    try {
+      await movieService.deleteMovie(deleteModal.movie.id);
+      setMovies(movies.filter(m => m._id !== deleteModal.movie!.id));
+      toast.success("Đã xóa phim thành công!");
+      setDeleteModal({ isOpen: false, movie: null });
+    } catch {
+      toast.error("Không thể xóa phim");
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModal({ isOpen: false, movie: null });
   };
 
   return (
@@ -103,39 +116,7 @@ export default function AdminMoviesPage() {
           </Link>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Tìm kiếm</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-                  placeholder="Nhập tên phim..."
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 pl-11 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Trạng thái</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => { setFilterStatus(e.target.value as "all" | "now-showing" | "coming-soon" | "ended"); setPage(1); }}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all" className="bg-gray-800 text-white">Tất cả</option>
-                <option value="now-showing" className="bg-gray-800 text-white">Đang chiếu</option>
-                <option value="coming-soon" className="bg-gray-800 text-white">Sắp chiếu</option>
-                <option value="ended" className="bg-gray-800 text-white">Đã kết thúc</option>
-              </select>
-            </div>
-          </div>
-        </div>
+
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -213,10 +194,27 @@ export default function AdminMoviesPage() {
                   <tr key={movie._id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center">
-                          <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                          </svg>
+                        <div className="w-12 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg overflow-hidden flex-shrink-0">
+                          {movie.posterUrl ? (
+                            <img 
+                              src={movie.posterUrl} 
+                              alt={movie.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.parentElement!.innerHTML = `
+                                  <svg class="w-6 h-6 text-gray-500 mx-auto mt-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                                  </svg>
+                                `;
+                              }}
+                            />
+                          ) : (
+                            <svg className="w-6 h-6 text-gray-500 mx-auto mt-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                            </svg>
+                          )}
                         </div>
                         <div>
                           <p className="font-semibold text-white">{movie.title}</p>
@@ -319,6 +317,51 @@ export default function AdminMoviesPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-red-500/30 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            {/* Icon */}
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-2xl font-bold text-white text-center mb-2">
+              Xác nhận xóa phim
+            </h3>
+
+            {/* Message */}
+            <p className="text-gray-300 text-center mb-6">
+              Bạn có chắc chắn muốn xóa phim{" "}
+              <span className="font-semibold text-white">"{deleteModal.movie?.title}"</span>?
+              <br />
+              <span className="text-sm text-red-400">Hành động này không thể hoàn tác!</span>
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-all border border-white/20"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl transition-all shadow-lg shadow-red-600/30"
+              >
+                Xóa phim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

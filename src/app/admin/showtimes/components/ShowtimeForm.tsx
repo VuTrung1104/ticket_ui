@@ -125,34 +125,21 @@ export function ShowtimeForm({
           </div>
         </div>
 
-        {/* Price and Screen Number */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Giá vé (VNĐ) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={values.price}
-              onChange={(e) => onChange({ price: e.target.value })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="75000"
-              required
-              min="0"
-              step="1000"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Số phòng</label>
-            <input
-              type="number"
-              value={values.screenNumber}
-              onChange={(e) => onChange({ screenNumber: e.target.value })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="1"
-              min="1"
-            />
-          </div>
+        {/* Price */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Giá vé (VNĐ) <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            value={values.price}
+            onChange={(e) => onChange({ price: e.target.value })}
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="75000"
+            required
+            min="0"
+            step="1000"
+          />
         </div>
 
         {/* Format */}
