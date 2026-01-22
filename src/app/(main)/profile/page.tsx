@@ -86,8 +86,7 @@ export default function ProfilePage() {
       if (profile.avatar) {
         setAvatarUrl(profile.avatar);
       }
-      
-      // Convert ISO date to YYYY-MM-DD format for date input
+
       let formattedDate = "";
       if (profile.dateOfBirth) {
         const date = new Date(profile.dateOfBirth);
@@ -99,8 +98,8 @@ export default function ProfilePage() {
         phone: profile.phone || "",
         dateOfBirth: formattedDate,
       });
-    } catch (error) {
-      console.error("Error fetching user data:", error);
+    } catch {
+      // Ignore fetch errors
     } finally {
       setLoading(false);
     }
@@ -171,35 +170,32 @@ export default function ProfilePage() {
         const response = await userService.uploadAvatar(compressedFile);
         setAvatarUrl(response.avatar);
 
+        // Refresh user profile to get updated avatar
         await refreshUser();
         
+        // Also reload page data
+        await fetchUserData();
+        
         toast.success("Cập nhật ảnh đại diện thành công!");
-      } catch (error: any) {
-        console.error("Error uploading avatar:", error);
-        toast.error(error.response?.data?.message || "Lỗi khi tải ảnh lên");
+      } catch (error: unknown) {
+        toast.error(
+          error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'data' in error.response &&
+          error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data
+            ? String(error.response.data.message)
+            : "Lỗi khi tải ảnh lên"
+        );
       }
-    }
-  };
-
-  const handleRemoveAvatar = async () => {
-    try {
-      await userService.updateProfile({ avatar: "" });
-      setAvatarUrl("");
-      toast.success("Đã xóa ảnh đại diện");
-    } catch (error) {
-      console.error("Error removing avatar:", error);
-      toast.error("Lỗi khi xóa ảnh đại diện");
     }
   };
 
   const handleSaveProfile = async () => {
     try {
       // Remove empty fields to avoid validation errors
-      const dataToUpdate: any = {};
+      const dataToUpdate: Record<string, string> = {};
       if (editedData.fullName) dataToUpdate.fullName = editedData.fullName;
       if (editedData.phone) dataToUpdate.phone = editedData.phone;
       if (editedData.dateOfBirth) {
-        // Convert to ISO 8601 format
         const date = new Date(editedData.dateOfBirth);
         dataToUpdate.dateOfBirth = date.toISOString();
       }
@@ -209,12 +205,16 @@ export default function ProfilePage() {
       
       toast.success("Cập nhật thông tin thành công!");
       setIsEditing(false);
-      
-      // Refresh user data
+
       await fetchUserData();
-    } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast.error(error.response?.data?.message || "Lỗi khi cập nhật thông tin");
+    } catch (error: unknown) {
+      toast.error(
+        error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data
+          ? String(error.response.data.message)
+          : "Lỗi khi cập nhật thông tin"
+      );
     }
   };
 
@@ -431,10 +431,13 @@ export default function ProfilePage() {
                 const showtimeData = typeof ticket.showtimeId === 'string' ? null : ticket.showtimeId;
                 const movieTitle = showtimeData?.movieId?.title || ticket.movie || 'N/A';
                 const cinemaName = showtimeData?.theaterId?.name || ticket.cinema || 'N/A';
-                const showDate = showtimeData?.showDate
-                  ? new Date(showtimeData.showDate).toLocaleDateString('vi-VN')
+                const startTime = showtimeData?.startTime;
+                const showDate = startTime
+                  ? new Date(startTime).toLocaleDateString('vi-VN')
                   : ticket.date || 'N/A';
-                const showTime = showtimeData?.showTime || ticket.time || 'N/A';
+                const showTime = startTime
+                  ? new Date(startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                  : ticket.time || 'N/A';
                 const bookingId = ticket._id || ticket.id || `booking-${index}`;
                 const totalPrice = ticket.totalPrice || 0;
                 
@@ -475,12 +478,12 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex flex-col justify-between items-end">
                       <div className="text-2xl font-bold text-red-500">{totalPrice.toLocaleString("vi-VN")}đ</div>
-                      <button 
-                        onClick={() => window.location.href = `/booking-success?bookingId=${bookingId}`}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-all text-sm"
+                      <Link 
+                        href={`/booking-success?bookingId=${bookingId}`}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-all text-sm inline-block text-center"
                       >
                         Xem chi tiết
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -500,7 +503,14 @@ export default function ProfilePage() {
                 <p className="text-gray-400">Chưa có lịch sử đặt vé</p>
               </div>
             ) : (
-              userBookings.map((booking) => (
+              userBookings.map((booking) => {
+                // Extract showtime data safely
+                const showtimeData = typeof booking.showtimeId === 'object' ? booking.showtimeId : null;
+                const movieTitle = showtimeData?.movieId?.title || showtimeData?.movie?.title || booking.movie || 'N/A';
+                const theaterName = showtimeData?.theaterId?.name || showtimeData?.theater?.name || booking.cinema || 'N/A';
+                const startTime = showtimeData?.startTime || booking.showtime?.startTime;
+                
+                return (
                 <div
                   key={booking._id}
                   className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
@@ -508,7 +518,7 @@ export default function ProfilePage() {
                   <div className="flex flex-col md:flex-row justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-bold">{booking.showtime?.movie?.title || 'N/A'}</h3>
+                        <h3 className="text-xl font-bold">{movieTitle}</h3>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             booking.status === "confirmed"
@@ -522,9 +532,9 @@ export default function ProfilePage() {
                         </span>
                       </div>
                       <div className="space-y-1 text-sm text-gray-300">
-                        <p>{booking.showtime?.theater?.name || 'N/A'} - {booking.showtime?.room?.name || 'N/A'}</p>
+                        <p>{theaterName}</p>
                         <p>
-                          {booking.showtime?.startTime ? new Date(booking.showtime.startTime).toLocaleDateString('vi-VN') : 'N/A'} - {booking.showtime?.startTime ? new Date(booking.showtime.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                          {startTime ? new Date(startTime).toLocaleDateString('vi-VN') : 'N/A'} - {startTime ? new Date(startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                         </p>
                         <p>Ghế: {booking.seats?.join(", ")}</p>
                         <p className="text-gray-400">Mã đặt vé: {booking.bookingCode}</p>
@@ -541,7 +551,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
-              ))
+              )})
             )}
           </div>
         )}

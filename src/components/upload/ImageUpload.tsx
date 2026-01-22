@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
+import apiClient from '@/lib/apiClient';
 
 interface ImageUploadProps {
   onImageUpload: (url: string) => void;
@@ -45,27 +46,30 @@ export default function ImageUpload({
     };
     reader.readAsDataURL(file);
 
-    // Upload to server
+    // Upload to server using apiClient
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', folder);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/image`, {
-        method: 'POST',
-        body: formData,
+      const response = await apiClient.post('/upload/image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const data = await response.json();
-      onImageUpload(data.url);
-    } catch (err) {
-      setError('Lỗi khi upload ảnh. Vui lòng thử lại.');
+      const imageUrl = response.data.url;
+      setPreview(imageUrl); // Update preview with server URL
+      onImageUpload(imageUrl);
+    } catch (err: unknown) {
+      setError(
+        err && typeof err === 'object' && 'response' in err && 
+        err.response && typeof err.response === 'object' && 'data' in err.response &&
+        err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data
+          ? String(err.response.data.message)
+          : 'Lỗi khi upload ảnh. Vui lòng thử lại.'
+      );
       setPreview(null);
-      console.error('Upload error:', err);
     } finally {
       setUploading(false);
     }

@@ -9,14 +9,27 @@ function CallbackPageContent() {
 
   useEffect(() => {
     // OAuth callback (Google, Facebook)
-    const code = searchParams.get("code");
     const token = searchParams.get("token");
+    const accessToken = searchParams.get("accessToken");
+    const refreshToken = searchParams.get("refreshToken");
+    const user = searchParams.get("user");
 
-    if (token) {
-      localStorage.setItem("accessToken", token);
+    if (token || accessToken) {
+      localStorage.setItem("accessToken", token || accessToken || "");
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
+      if (user) {
+        try {
+          localStorage.setItem("user", decodeURIComponent(user));
+        } catch (error) {
+          // Ignore invalid user data
+        }
+      }
       router.push("/");
-    } else if (code) {
-      // TODO: Implement OAuth flow
+    } else {
+      // If no token provided, redirect to login
+      router.push("/login");
     }
   }, [searchParams, router]);
 

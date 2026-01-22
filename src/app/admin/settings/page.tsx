@@ -43,8 +43,7 @@ export default function AdminSettingsPage() {
           smsNotification: response.data.smsNotification || false,
         });
       }
-    } catch (error) {
-      console.error("Error fetching settings:", error);
+    } catch {
       toast.error("Không thể tải cài đặt hệ thống");
     } finally {
       setLoading(false);
@@ -55,8 +54,7 @@ export default function AdminSettingsPage() {
     try {
       await apiClient.put("/settings", settings);
       toast.success("Đã lưu cài đặt thành công!");
-    } catch (error) {
-      console.error("Error saving settings:", error);
+    } catch {
       toast.error("Lỗi khi lưu cài đặt");
     }
   };
@@ -67,8 +65,7 @@ export default function AdminSettingsPage() {
         await apiClient.post("/settings/reset");
         await fetchSettings();
         toast.success("Đã khôi phục cài đặt mặc định!");
-      } catch (error) {
-        console.error("Error resetting settings:", error);
+      } catch {
         toast.error("Lỗi khi khôi phục cài đặt");
       }
     }

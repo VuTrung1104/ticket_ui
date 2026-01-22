@@ -4,39 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { bookingService } from '@/lib';
 
 function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(10);
-  const [confirmed, setConfirmed] = useState(false);
-  const [confirming, setConfirming] = useState(false);
 
   const bookingId = searchParams.get('bookingId');
   const orderId = searchParams.get('orderId');
-
-  useEffect(() => {
-    const confirmPayment = async () => {
-      if (bookingId && !confirmed && !confirming) {
-        setConfirming(true);
-        try {
-          await bookingService.confirmBooking(bookingId);
-          setConfirmed(true);
-        } catch (error: unknown) {
-          console.error(' Error confirming booking:', error);
-          const errorData = error as { response?: { data?: { message?: string } } };
-          if (errorData?.response?.data?.message?.includes('already confirmed')) {
-            setConfirmed(true);
-          }
-        } finally {
-          setConfirming(false);
-        }
-      }
-    };
-
-    confirmPayment();
-  }, [bookingId, confirmed, confirming]);
 
   useEffect(() => {
     const timer = setInterval(() => {

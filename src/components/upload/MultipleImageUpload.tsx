@@ -79,9 +79,8 @@ export default function MultipleImageUpload({
       const data = await response.json() as { images: Array<{ url: string }> };
       const urls = data.images.map((img) => img.url);
       onImagesUpload([...previews, ...urls]);
-    } catch (err) {
+    } catch {
       setError('Lỗi khi upload ảnh. Vui lòng thử lại.');
-      console.error('Upload error:', err);
     } finally {
       setUploading(false);
     }

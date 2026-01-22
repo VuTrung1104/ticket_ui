@@ -68,8 +68,7 @@ export default function TheaterDetailPage() {
     try {
       const theaterData = (await theaterService.getTheaterById(theaterId)) as unknown as Theater;
       setTheater(theaterData);
-    } catch (error) {
-      console.error("Error fetching theater:", error);
+    } catch {
       toast.error("Lỗi khi tải thông tin rạp");
     }
   }, [theaterId, router]);
@@ -112,8 +111,8 @@ export default function TheaterDetailPage() {
         movieMap.set(movie._id, movie);
       });
       setMovies(movieMap);
-    } catch (error) {
-      console.error("Error fetching showtimes:", error);
+    } catch {
+      // Ignore fetch errors
     } finally {
       setLoading(false);
     }

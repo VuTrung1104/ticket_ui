@@ -60,8 +60,7 @@ export default function EditMoviePage() {
         ageRating: movie.ageRating || "T13",
         status: movie.status || "coming-soon",
       });
-    } catch (error) {
-      console.error("Error fetching movie:", error);
+    } catch {
       toast.error("Không thể tải thông tin phim");
       router.push("/admin/movies");
     } finally {
@@ -109,7 +108,6 @@ export default function EditMoviePage() {
       toast.success("Đã cập nhật phim thành công!");
       router.push("/admin/movies");
     } catch (error: unknown) {
-      console.error("Error updating movie:", error);
       const errorMessage = error instanceof AxiosError ?
         error.response?.data?.message || "Không thể cập nhật phim" : "Không thể cập nhật phim";
       toast.error(errorMessage);

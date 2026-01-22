@@ -34,8 +34,8 @@ export default function WishlistPage() {
     if (saved) {
       try {
         setWishlist(JSON.parse(saved));
-      } catch (error) {
-        console.error("Error loading wishlist:", error);
+      } catch {
+        // Ignore parse errors
       }
     }
   }, [user, router]);

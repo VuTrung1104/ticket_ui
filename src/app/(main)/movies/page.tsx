@@ -27,13 +27,13 @@ const generateSlug = (title: string): string => {
   return title
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[\u0300-\u036f]/g, '') 
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'd')
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+    .replace(/[^a-z0-9\s-]/g, '')
     .trim()
-    .replace(/\s+/g, '-') // Replace spaces with -
-    .replace(/-+/g, '-'); // Replace multiple - with single -
+    .replace(/\s+/g, '-') 
+    .replace(/-+/g, '-'); 
 };
 
 export default function MoviesPage() {
@@ -49,12 +49,12 @@ export default function MoviesPage() {
         setLoading(true);
         const response = await movieService.getMovies({
           page,
-          limit: 12,
+          limit: 15,
+          status: activeTab,
         });
         setMovies(response.data || []);
         setTotalPages(response.meta?.totalPages || 1);
-      } catch (error) {
-        console.error("Error fetching movies:", error);
+      } catch {
         setMovies([]);
       } finally {
         setLoading(false);
@@ -64,14 +64,7 @@ export default function MoviesPage() {
     fetchMovies();
   }, [page, activeTab]);
 
-  // Filter movies based on active tab
-  const filteredMovies = movies.filter((movie) => {
-    if (activeTab === "now-showing") {
-      return movie.status === "now-showing";
-    } else {
-      return movie.status === "coming-soon";
-    }
-  });
+  const filteredMovies = movies;
 
   return (
     <div className="min-h-screen bg-[#181b24] pt-24 pb-12 px-4">

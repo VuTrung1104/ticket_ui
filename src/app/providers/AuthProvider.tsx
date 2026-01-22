@@ -27,7 +27,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // Start with true
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -45,8 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(profile);
             localStorage.setItem("user", JSON.stringify(profile));
           })
-          .catch(err => {
-            console.error("Error fetching profile:", err);
+          .catch(() => {
             // If profile fetch fails, clear invalid data
             localStorage.removeItem("user");
             localStorage.removeItem("accessToken");
@@ -57,7 +56,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(false);
           });
       } catch (error) {
-        console.error("Error parsing user data:", error);
         setLoading(false);
       }
     } else {
@@ -80,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const errorMessage = error.response?.data?.message || "Sai email hoặc mật khẩu!";
       setError(errorMessage);
       toast.error(errorMessage);
-      console.error("Login error:", err);
       setLoading(false);
       return false;
     }
@@ -110,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       const errorMessage = error?.response?.data?.message || "Lỗi kết nối server!";
-      console.error("Register error details:", error?.response?.data);
       setError(errorMessage);
       toast.error(errorMessage);
       setLoading(false);
@@ -129,8 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await authService.logout();
-    } catch (error) {
-      console.error("Logout error:", error);
+    } catch {
+      // Ignore logout errors
     }
     
     setUser(null);
@@ -143,8 +139,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile = await authService.getProfile();
       setUser(profile);
       localStorage.setItem("user", JSON.stringify(profile));
-    } catch (error) {
-      console.error("Error refreshing user:", error);
+    } catch {
+      // Ignore refresh errors
     }
   };
 

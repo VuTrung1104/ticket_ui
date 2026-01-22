@@ -1,240 +1,188 @@
-# WebĐặtVé - Frontend
+# WebĐặtVé - Cinema Booking Platform
 
-Ứng dụng đặt vé xem phim online được xây dựng với Next.js 15, TypeScript và Tailwind CSS. Hỗ trợ đầy đủ tính năng từ xem phim, đặt vé realtime, thanh toán đến quản trị hệ thống.
+> Hệ thống đặt vé xem phim trực tuyến với Next.js 15, TypeScript và Tailwind CSS
+
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.3-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-38bdf8?logo=tailwind-css)](https://tailwindcss.com/)
 
 ## Tính năng chính
 
-### Người dùng
-- **Xác thực**: Đăng ký, đăng nhập, OAuth callback
-- **Xem phim**: Danh sách phim, chi tiết phim, lịch chiếu
-- **Đặt vé**: Chọn ghế realtime, thanh toán online
-- **Wishlist**: Lưu phim yêu thích
-- **Hồ sơ**: Quản lý thông tin cá nhân, lịch sử đặt vé
-- **Rạp chiếu**: Xem thông tin rạp và suất chiếu
+- **Đặt vé realtime**: Chọn ghế với Socket.IO, cập nhật trạng thái tức thì
+- **Thanh toán đa dạng**: VNPay, MoMo, ZaloPay
+- **Xác thực OAuth**: Google, Facebook
+- **Quản trị viên**: Dashboard, quản lý phim/suất chiếu/rạp/người dùng/đặt vé
+- **Responsive**: Tối ưu cho mọi thiết bị
 
-### Quản trị viên
-- **Dashboard**: Thống kê tổng quan hệ thống
-- **Quản lý phim**: Thêm, sửa, xóa phim
-- **Quản lý suất chiếu**: Tạo và quản lý lịch chiếu
-- **Quản lý đặt vé**: Xem và xử lý đơn đặt vé
-- **Quản lý người dùng**: Quản lý tài khoản người dùng
-- **Cài đặt**: Cấu hình hệ thống
+## Tech Stack
 
-## Công nghệ sử dụng
+- **Next.js 15** - App Router, Turbopack, RSC
+- **TypeScript 5** - Type safety
+- **Tailwind CSS 4** - Styling
+- **Socket.IO** - Realtime updates
+- **Axios** - API client
+- **Recharts** - Data visualization
 
-- **Framework**: Next.js 15 (App Router) với Turbopack
-- **Language**: TypeScript 5
-- **Styling**: Tailwind CSS 4
-- **State Management**: React Context API
-- **Data Fetching**: SWR, Axios
-- **Realtime**: Socket.io Client
-- **Animations**: Framer Motion
-- **UI Components**: 
-  - Lucide React (icons)
-  - React Icons
-  - Swiper (carousel)
-  - Recharts (charts)
-- **Notifications**: React Hot Toast, Sonner
-- **Form Validation**: Custom validators
+## Cài đặt
 
-## Cấu trúc thư mục
-
-```
-webdatve/
-├── src/
-│   ├── app/                      # Next.js App Router
-│   │   ├── (auth)/              # Auth routes (login, register, callback)
-│   │   ├── (main)/              # Main routes (movies, theaters, profile, etc.)
-│   │   ├── admin/               # Admin dashboard routes
-│   │   └── providers/           # Context providers
-│   ├── components/              # React components
-│   │   ├── auth/               # Authentication components
-│   │   ├── booking/            # Booking flow components
-│   │   ├── layout/             # Layout components (header, footer, etc.)
-│   │   ├── ui/                 # Reusable UI components
-│   │   └── upload/             # File upload components
-│   ├── hooks/                   # Custom React hooks
-│   │   ├── useAuth.ts
-│   │   ├── useBooking.ts
-│   │   ├── useSeatRealtime.ts
-│   │   └── useScroll.ts
-│   ├── lib/                     # Core libraries & services
-│   │   ├── apiClient.ts        # Axios instance config
-│   │   ├── authService.ts      # Authentication service
-│   │   ├── bookingService.ts   # Booking service
-│   │   ├── movieService.ts     # Movie service
-│   │   ├── paymentService.ts   # Payment service
-│   │   ├── showtimeService.ts  # Showtime service
-│   │   ├── userService.ts      # User service
-│   │   └── utils.ts            # Utility functions
-│   ├── types/                   # TypeScript type definitions
-│   ├── utils/                   # Utility functions
-│   │   └── validation.ts       # Form validation
-│   └── constants/               # App constants
-└── public/
-    └── assets/                  # Static assets
-        ├── icons/              # Icon files
-        ├── images/             # Images
-        ├── posters/            # Movie posters
-        └── hover/              # Hover effects
-```
-
-## Bắt đầu
-
-### Yêu cầu hệ thống
-- Node.js >= 18.x
-- npm hoặc yarn
-
-### Cài đặt
-
-1. **Clone repository**
 ```bash
+# Clone repository
 git clone <repository-url>
 cd webdatve
-```
 
-2. **Cài đặt dependencies**
-```bash
+# Cài đặt dependencies
 npm install
-# hoặc
-yarn install
-```
 
-3. **Cấu hình biến môi trường**
+# Tạo file .env.local
+cp .env.example .env.local
 
-Tạo file `.env.local` trong thư mục gốc:
-
-```env
-
-# API Configuration
-NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
-NEXT_PUBLIC_WS_URL=ws://localhost:5000
-
-# OAuth (tùy chọn)
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
-NEXT_PUBLIC_FACEBOOK_APP_ID=your_facebook_app_id
-
-# Payment Gateway (tùy chọn)
-NEXT_PUBLIC_VNPAY_TMN_CODE=your_vnpay_code
-```
-
-4. **Chạy development server**
-```bash
+# Chạy development server
 npm run dev
 ```
 
-Mở [http://localhost:3000](http://localhost:3000) để xem ứng dụng.
+## Environment Variables
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+NEXT_PUBLIC_WS_URL=http://localhost:5000
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+NEXT_PUBLIC_FACEBOOK_APP_ID=your_facebook_app_id
+```
 
 ## Scripts
 
 ```bash
-# Chạy development server với Turbopack
-npm run dev
+npm run dev          # Development server
+npm run build        # Build production
+npm start            # Run production
+npm run lint         # ESLint check
+npm run type-check   # TypeScript check
+```
 
-# Build production
-npm run build
+## Cấu trúc
 
-# Chạy production server
-npm start
-
-# Lint code
-npm run lint
+```
+webdatve/
+├── src/
+│   ├── app/                          # Next.js App Router
+│   │   ├── (auth)/                   # Auth routes
+│   │   │   ├── callback/             # OAuth callback
+│   │   │   ├── login/                # Login page
+│   │   │   └── register/             # Register page
+│   │   ├── (main)/                   # Main application routes
+│   │   │   ├── movies/               # Movies listing & detail
+│   │   │   ├── showtimes/            # Showtimes & seat selection
+│   │   │   ├── theaters/             # Theater information
+│   │   │   ├── checkout/             # Booking checkout
+│   │   │   ├── profile/              # User profile
+│   │   │   ├── wishlist/             # Favorite movies
+│   │   │   ├── booking-success/      # Booking success page
+│   │   │   ├── payment-success/      # Payment success page
+│   │   │   ├── payment-failed/       # Payment failed page
+│   │   │   ├── gioi-thieu/           # About page
+│   │   │   └── lien-he/              # Contact page
+│   │   ├── admin/                    # Admin dashboard
+│   │   │   ├── layout.tsx            # Admin layout
+│   │   │   ├── dashboard/            # Overview & statistics
+│   │   │   ├── movies/               # Movie management
+│   │   │   ├── showtimes/            # Showtime management
+│   │   │   ├── bookings/             # Booking management
+│   │   │   ├── theaters/             # Theater management
+│   │   │   ├── users/                # User management
+│   │   │   └── settings/             # System settings
+│   │   ├── providers/                # Context providers
+│   │   │   └── AuthProvider.tsx      # Auth context
+│   │   ├── AppWrapper.tsx            # App wrapper
+│   │   ├── globals.css               # Global styles
+│   │   ├── layout.tsx                # Root layout
+│   │   ├── page.tsx                  # Home page
+│   │   └── not-found.tsx             # 404 page
+│   ├── components/                   # React components
+│   │   ├── auth/                     # Authentication UI
+│   │   │   ├── AuthButton.tsx
+│   │   │   ├── AuthInput.tsx
+│   │   │   ├── AuthLayout.tsx
+│   │   │   ├── ErrorAlert.tsx
+│   │   │   └── SocialLoginButtons.tsx
+│   │   ├── booking/                  # Booking flow UI
+│   │   │   └── Slider.tsx
+│   │   ├── layout/                   # Header, Footer, etc.
+│   │   │   ├── Header.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── MovieCard.tsx
+│   │   │   ├── MovieGrid.tsx
+│   │   │   └── PosterWithHover.tsx
+│   │   ├── ui/                       # Reusable UI components
+│   │   │   └── ScrollToTop.tsx
+│   │   └── upload/                   # Image upload components
+│   │       ├── ImageUpload.tsx
+│   │       └── MultipleImageUpload.tsx
+│   ├── hooks/                        # Custom React hooks
+│   │   ├── useAuth.ts                # Authentication hook
+│   │   ├── useBooking.ts             # Booking state hook
+│   │   ├── useSeatRealtime.ts        # Realtime seat updates
+│   │   └── useScroll.ts              # Scroll detection
+│   ├── lib/                          # Services & utilities
+│   │   ├── apiClient.ts              # Axios configuration
+│   │   ├── authService.ts            # Auth API calls
+│   │   ├── bookingService.ts         # Booking API calls
+│   │   ├── movieService.ts           # Movie API calls
+│   │   ├── showtimeService.ts        # Showtime API calls
+│   │   ├── paymentService.ts         # Payment API calls
+│   │   ├── userService.ts            # User API calls
+│   │   ├── uploadService.ts          # File upload
+│   │   ├── utils.ts                  # Utility functions
+│   │   └── index.ts                  # Export all services
+│   ├── types/                        # TypeScript definitions
+│   │   └── index.ts                  # Shared types
+│   ├── utils/                        # Utility functions
+│   │   └── validation.ts             # Form validators
+│   └── constants/                    # App constants
+│       └── auth.ts                   # Auth constants
+├── public/
+│   └── assets/                       # Static files
+│       ├── icons/
+│       ├── images/
+│       ├── posters/
+│       └── hover/
+├── .env.local                        # Environment variables
+├── next.config.ts                    # Next.js configuration
+├── tailwind.config.ts                # Tailwind configuration
+├── postcss.config.mjs                # PostCSS configuration
+├── eslint.config.mjs                 # ESLint configuration
+├── tsconfig.json                     # TypeScript configuration
+├── package.json                      # Dependencies
+└── README.md                         # Documentation
 ```
 
 ## Routes chính
 
-### Public Routes
-- `/` - Trang chủ
-- `/movies` - Danh sách phim
-- `/movies/[id]` - Chi tiết phim
-- `/theaters` - Danh sách rạp
-- `/showtimes` - Lịch chiếu
-- `/gioi-thieu` - Giới thiệu
-- `/lien-he` - Liên hệ
-
-### Auth Routes
-- `/login` - Đăng nhập
-- `/register` - Đăng ký
-- `/callback` - OAuth callback
-
-### Protected Routes
-- `/profile` - Trang cá nhân
-- `/wishlist` - Danh sách yêu thích
-- `/checkout` - Thanh toán
-- `/booking-success` - Đặt vé thành công
-- `/payment-success` - Thanh toán thành công
-- `/payment-failed` - Thanh toán thất bại
-
-### Admin Routes
-- `/admin/dashboard` - Tổng quan
-- `/admin/movies` - Quản lý phim
-- `/admin/showtimes` - Quản lý suất chiếu
-- `/admin/bookings` - Quản lý đặt vé
-- `/admin/users` - Quản lý người dùng
-- `/admin/settings` - Cài đặt
-
-## Styling
-
-Dự án sử dụng Tailwind CSS 4 với PostCSS. File cấu hình chính:
-
-- `src/app/globals.css` - Global styles
-- `tailwind.config.js` - Tailwind configuration
-- `postcss.config.mjs` - PostCSS configuration
-
-## API Integration
-
-Tất cả API calls được thực hiện qua `apiClient.ts` và các service tương ứng:
-
-```typescript
-// Example: Fetch movies
-import { movieService } from '@/lib/movieService';
-
-const movies = await movieService.getMovies();
-```
-
-## Best Practices
-
-- Sử dụng TypeScript cho type safety
-- Components được tổ chức theo chức năng
-- Custom hooks cho logic tái sử dụng
-- Service layer cho API calls
-- Error handling và loading states
-- Responsive design
-- SEO optimization với Next.js metadata
+| Route | Mô tả |
+|-------|-------|
+| `/` | Trang chủ |
+| `/movies` | Danh sách phim |
+| `/movies/[slug]` | Chi tiết phim |
+| `/showtimes/[id]` | Chọn ghế & đặt vé |
+| `/theaters` | Danh sách rạp |
+| `/profile` | Thông tin cá nhân |
+| `/admin/*` | Quản trị |
 
 ## Deployment
 
 ### Vercel (Khuyến nghị)
-1. Push code lên GitHub
-2. Import project vào Vercel
-3. Cấu hình environment variables
-4. Deploy tự động
 
-### Manual Deployment
 ```bash
-# Build production
-npm run build
-
-# Chạy production server
-npm start
+# Deploy tự động từ GitHub
+vercel --prod
 ```
 
-## Đóng góp
+### Manual
 
-1. Fork project
-2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Mở Pull Request
+```bash
+npm run build
+npm start
 
 ## License
 
-Private project - All rights reserved
+© 2026 WebĐặtVé - All rights reserved
 
-## Liên hệ
-
-Nếu có vấn đề hoặc câu hỏi, vui lòng tạo issue hoặc liên hệ team phát triển.
-
----
-
-Made with love by WebĐặtVé Team

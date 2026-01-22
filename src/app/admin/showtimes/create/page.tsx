@@ -51,8 +51,7 @@ export default function CreateShowtimePage() {
       ]);
       setMovies(moviesRes.data as unknown as MovieData[] || []);
       setTheaters(theatersRes as unknown as TheaterData[] || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
+    } catch {
       toast.error("Không thể tải danh sách phim và rạp");
     }
   };
@@ -90,7 +89,6 @@ export default function CreateShowtimePage() {
       toast.success("Đã tạo suất chiếu mới thành công!");
       router.push("/admin/showtimes");
     } catch (error: unknown) {
-      console.error("Error creating showtime:", error);
       const errorMessage = error instanceof AxiosError ? 
         error.response?.data?.message || "Không thể tạo suất chiếu mới" : "Không thể tạo suất chiếu mới";
       toast.error(errorMessage);

@@ -16,6 +16,7 @@ interface Theater {
   rating?: number;
   distance?: number;
   imageUrl?: string;
+  image?: string;
 }
 
 export default function TheatersPage() {
@@ -52,8 +53,8 @@ export default function TheatersPage() {
           ...new Set(normalizedTheaters.map((t) => t.city || "Khác")),
         ] as string[];
         setCities(uniqueCities);
-      } catch (error) {
-        console.error("Error fetching theaters:", error);
+      } catch {
+        // Ignore fetch errors
       } finally {
         setLoading(false);
       }

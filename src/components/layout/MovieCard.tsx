@@ -129,7 +129,6 @@ export default function MovieCard({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  // TODO: Navigate to booking
                   window.location.href = slug ? `/showtimes/${slug}` : "#";
                 }}
                 className="flex-1 bg-red-400 hover:bg-red-600 text-white font-bold 

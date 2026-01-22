@@ -47,8 +47,10 @@ function CheckoutPageContent() {
   // Use realtime seat updates
   const { seatData, connected, selectSeats, notifyBookingCreated } = useSeatRealtime(showtimeId);
 
-  const rows = ["A", "B", "C", "D", "E", "F", "G", "H"];
-  const seatsPerRow = 10;
+  // Get seat layout from seatData or use defaults
+  const totalRows = seatData?.rows || 8;
+  const seatsPerRow = seatData?.seatsPerRow || 10;
+  const rows = Array.from({ length: totalRows }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, ...
 
   const loadShowtimeData = useCallback(async () => {
     if (!showtimeId) {
@@ -74,8 +76,7 @@ function CheckoutPageContent() {
           setMovie(showtimeData.movieId);
         }
       }
-    } catch (error) {
-      console.error("Error loading showtime:", error);
+    } catch {
       toast.error("Lỗi khi tải thông tin suất chiếu");
       router.push("/movies");
     } finally {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 
 export default function AdminLayout({
   children,
@@ -11,6 +12,7 @@ export default function AdminLayout({
 }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const menuItems = [
     {
@@ -83,8 +85,32 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-black to-gray-900">
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg border border-white/10 text-white"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {sidebarOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          )}
+        </svg>
+      </button>
+
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 via-black to-gray-900 border-r border-white/10 shadow-2xl z-50">
+      <aside className={`fixed top-0 left-0 h-full w-72 bg-gradient-to-b from-gray-900 via-black to-gray-900 border-r border-white/10 shadow-2xl z-50 transition-transform duration-300 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-white/10">
@@ -115,6 +141,7 @@ export default function AdminLayout({
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setSidebarOpen(false)}
                     className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                       isActive
                         ? "text-white"
@@ -176,8 +203,8 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="ml-72">
-        <div className="p-8">{children}</div>
+      <main className="lg:ml-72 min-h-screen">
+        <div className="p-4 lg:p-8 pt-16 lg:pt-8">{children}</div>
       </main>
     </div>
   );

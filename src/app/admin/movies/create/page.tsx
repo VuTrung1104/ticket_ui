@@ -13,6 +13,10 @@ const BASE_GENRES = [
   { display: "Comedy", value: "comedy" },
   { display: "Drama", value: "drama" },
   { display: "Horror", value: "horror" },
+  { display: "Romance", value: "romance" },
+  { display: "Sci-Fi", value: "sci-fi" },
+  { display: "Thriller", value: "thriller" },
+  { display: "Animation", value: "animation" },
 ];
 
 export default function CreateMoviePage() {
@@ -200,6 +204,18 @@ export default function CreateMoviePage() {
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="https://www.youtube.com/watch?v=..."
                 />
+                {formData.trailerUrl && (
+                  <div className="mt-3">
+                    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/50">
+                      <iframe
+                        src={formData.trailerUrl.replace('watch?v=', 'embed/')}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

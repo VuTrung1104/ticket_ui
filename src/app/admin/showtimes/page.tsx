@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { toast } from "sonner";
+import Link from "next/link";import Image from "next/image";import { toast } from "sonner";
 import { showtimeService } from "@/lib";
 
 interface ShowtimeData {
@@ -26,8 +25,6 @@ interface ShowtimeData {
 
 export default function AdminShowtimesPage() {
   const [showtimes, setShowtimes] = useState<ShowtimeData[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterDate, setFilterDate] = useState("");
   const [page, setPage] = useState(1);
   const limit = 10;
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; showtime: { id: string; movieTitle: string; time: string } | null }>({
@@ -37,37 +34,22 @@ export default function AdminShowtimesPage() {
 
   const fetchShowtimes = useCallback(async () => {
     try {
-      const response = await showtimeService.getShowtimes({
-        date: filterDate || undefined,
-      });
+      const response = await showtimeService.getShowtimes({});
       setShowtimes(response);
-    } catch (error) {
-      console.error("Error fetching showtimes:", error);
+    } catch {
       toast.error("Lỗi khi tải danh sách suất chiếu");
     }
-  }, [filterDate]);
+  }, []);
 
   useEffect(() => {
     fetchShowtimes();
   }, [fetchShowtimes]);
 
-  const filteredShowtimes = showtimes
-    .filter(showtime => showtime.movieId && showtime.theaterId) 
-    .filter(showtime => {
-      const movieTitle = typeof showtime.movieId === 'object' ? showtime.movieId?.title : '';
-      const theaterName = typeof showtime.theaterId === 'object' ? showtime.theaterId?.name : '';
-      const matchesSearch = movieTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           theaterName?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch;
-    });
+  const filteredShowtimes = showtimes.filter(showtime => showtime.movieId && showtime.theaterId);
 
   const totalPages = Math.max(1, Math.ceil(filteredShowtimes.length / limit));
   const paginatedShowtimes = filteredShowtimes.slice((page - 1) * limit, page * limit);
   const pageNumbers = Array.from({ length: totalPages || 1 }, (_, i) => i + 1);
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm, filterDate]);
 
   const handleDelete = async (id: string, movieTitle: string, time: string) => {
     setDeleteModal({ isOpen: true, showtime: { id, movieTitle, time } });
@@ -217,12 +199,13 @@ export default function AdminShowtimesPage() {
                   <tr key={showtime._id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg overflow-hidden flex-shrink-0">
-                          {(movie as any)?.posterUrl ? (
-                            <img 
-                              src={(movie as any).posterUrl} 
-                              alt={(movie as any)?.title || 'Movie'}
-                              className="w-full h-full object-cover"
+                        <div className="w-12 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg overflow-hidden flex-shrink-0 relative">
+                          {movie && 'posterUrl' in movie && movie.posterUrl ? (
+                            <Image 
+                              src={movie.posterUrl as string} 
+                              alt={movie?.title || 'Movie'}
+                              fill
+                              className="object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
@@ -301,11 +284,13 @@ export default function AdminShowtimesPage() {
                         <button
                           onClick={() => {
                             const movie = typeof showtime.movieId === 'object' ? showtime.movieId : null;
-                            showtime._id && handleDelete(
-                              showtime._id, 
-                              movie?.title || 'N/A', 
-                              showtime.startTime
-                            );
+                            if (showtime._id) {
+                              handleDelete(
+                                showtime._id, 
+                                movie?.title || 'N/A', 
+                                showtime.startTime
+                              );
+                            }
                           }}
                           className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
                           title="Xóa"
@@ -379,7 +364,7 @@ export default function AdminShowtimesPage() {
             {/* Message */}
             <p className="text-gray-300 text-center mb-6">
               Bạn có chắc chắn muốn xóa suất chiếu phim{" "}
-              <span className="font-semibold text-white">"{deleteModal.showtime?.movieTitle}"</span>
+              <span className="font-semibold text-white">&quot;{deleteModal.showtime?.movieTitle}&quot;</span>
               <br />
               vào lúc{" "}
               <span className="font-semibold text-purple-400">

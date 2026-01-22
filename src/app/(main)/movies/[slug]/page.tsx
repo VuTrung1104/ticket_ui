@@ -81,7 +81,6 @@ export default function MovieDetailPage() {
     return formatter.format(d); // yyyy-mm-dd in VN timezone
   };
   const formatLocalDate = (date: Date) => formatDateInVN(date);
-  const toLocalDateString = (isoDate: string) => formatDateInVN(isoDate);
   const [movie, setMovie] = useState<MovieData | null>(null);
   const [showtimes, setShowtimes] = useState<ShowtimeData[]>([]);
   const [selectedDate, setSelectedDate] = useState(formatLocalDate(new Date()));
@@ -94,7 +93,6 @@ export default function MovieDetailPage() {
   useEffect(() => {
     const fetchMovie = async () => {
       if (!slug || slug === '[object Object]') {
-        console.error("Invalid slug:", slug);
         toast.error("Slug phim không hợp lệ");
         return;
       }
@@ -103,8 +101,7 @@ export default function MovieDetailPage() {
         setLoading(true);
         const movieData = await movieService.getMovieById(slug);
         setMovie(movieData as MovieData);
-      } catch (error) {
-        console.error("Error fetching movie:", error);
+      } catch {
         toast.error("Không thể tải thông tin phim");
       } finally {
         setLoading(false);
@@ -130,8 +127,7 @@ export default function MovieDetailPage() {
         }
         const data = await showtimeService.getShowtimes({ movieId, date: selectedDate });
         setShowtimes(Array.isArray(data) ? (data as unknown as ShowtimeData[]) : []);
-      } catch (error) {
-        console.error("Error fetching showtimes:", error);
+      } catch {
         setShowtimes([]);
       } finally {
         setShowtimesLoading(false);
@@ -424,17 +420,12 @@ export default function MovieDetailPage() {
                           </svg>
                         </div>
                         <h3 className="text-xl font-semibold text-white mb-2">Chưa có lịch chiếu</h3>
-                        <p className="text-gray-400">Phim này hiện chưa có lịch chiếu. Vui lòng quay lại sau!</p>
+                        <p className="text-gray-400">Phim này hiện chưa có lịch chiếu cho ngày này. Vui lòng chọn ngày khác!</p>
                       </div>
                     );
                   }
 
-                  const filteredShowtimes = showtimes.filter((st) => {
-                    const stDate = toLocalDateString(st.startTime);
-                    return stDate === selectedDate;
-                  });
-
-                  const groupedByTheater = filteredShowtimes.reduce((acc: Record<string, ShowtimeData[]>, st) => {
+                  const groupedByTheater = showtimes.reduce((acc: Record<string, ShowtimeData[]>, st) => {
                     const theaterName = st.theaterId?.name || 'Rạp không xác định';
                     if (!acc[theaterName]) {
                       acc[theaterName] = [];
@@ -442,20 +433,6 @@ export default function MovieDetailPage() {
                     acc[theaterName].push(st);
                     return acc;
                   }, {} as Record<string, ShowtimeData[]>);
-
-                  if (Object.keys(groupedByTheater).length === 0) {
-                    return (
-                      <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-12 text-center">
-                        <div className="w-16 h-16 bg-gray-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <p className="text-gray-400 text-lg">Không có suất chiếu cho ngày này</p>
-                        <p className="text-gray-500 text-sm mt-2">Vui lòng chọn ngày khác</p>
-                      </div>
-                    );
-                  }
 
                   return Object.entries(groupedByTheater).map(([theaterName, theaterShowtimes]) => (
                     <div key={theaterName} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-6">

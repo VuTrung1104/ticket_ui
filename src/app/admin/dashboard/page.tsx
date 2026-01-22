@@ -151,8 +151,8 @@ export default function AdminDashboardPage() {
           bookings: count,
         })),
       });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
+    } catch {
+      // Ignore stats fetch errors
     }
   };
 

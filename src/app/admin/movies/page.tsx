@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
 import { movieService } from "@/lib/movieService";
 import type { Movie } from "@/types";
 
 export default function AdminMoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "now-showing" | "coming-soon" | "ended">("all");
   const [page, setPage] = useState(1);
   const limit = 10;
   const [meta, setMeta] = useState({
@@ -29,8 +28,6 @@ export default function AdminMoviesPage() {
     const fetchMovies = async () => {
       try {
         const response = await movieService.getMovies({
-          search: searchTerm || undefined,
-          status: filterStatus !== "all" ? filterStatus : undefined,
           limit,
           page,
         });
@@ -57,8 +54,7 @@ export default function AdminMoviesPage() {
             hasPrevPage: page > 1,
           });
         }
-      } catch (error) {
-        console.error("Error fetching movies:", error);
+      } catch {
         toast.error("Không thể tải danh sách phim");
         setMovies([]);
       }
@@ -66,12 +62,9 @@ export default function AdminMoviesPage() {
 
     const timer = setTimeout(fetchMovies, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, filterStatus, page, limit]);
+  }, [page, limit]);
 
-  const filteredMovies = movies.filter(movie => {
-    const matchesStatus = filterStatus === "all" || movie.status === filterStatus;
-    return matchesStatus;
-  });
+  const filteredMovies = movies;
 
   const pageNumbers = Array.from({ length: meta.totalPages || 1 }, (_, i) => i + 1);
 
@@ -194,12 +187,13 @@ export default function AdminMoviesPage() {
                   <tr key={movie._id} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="w-12 h-16 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg overflow-hidden flex-shrink-0 relative">
                           {movie.posterUrl ? (
-                            <img 
+                            <Image 
                               src={movie.posterUrl} 
                               alt={movie.title}
-                              className="w-full h-full object-cover"
+                              fill
+                              className="object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
@@ -339,7 +333,7 @@ export default function AdminMoviesPage() {
             {/* Message */}
             <p className="text-gray-300 text-center mb-6">
               Bạn có chắc chắn muốn xóa phim{" "}
-              <span className="font-semibold text-white">"{deleteModal.movie?.title}"</span>?
+              <span className="font-semibold text-white">&quot;{deleteModal.movie?.title}&quot;</span>?
               <br />
               <span className="text-sm text-red-400">Hành động này không thể hoàn tác!</span>
             </p>

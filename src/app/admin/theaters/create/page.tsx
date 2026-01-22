@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { toast } from "sonner";
 import { theaterService } from "@/lib";
 import { uploadService } from "@/lib/uploadService";
@@ -33,11 +34,6 @@ export default function CreateTheaterPage() {
     }
   };
 
-  const handleRowsChange = (value: string) => {
-    const rows = value.split(",").map((r) => parseInt(r.trim())).filter((r) => !isNaN(r));
-    setFormData({ ...formData, rows });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -55,9 +51,10 @@ export default function CreateTheaterPage() {
         imageUrl = uploadResult.url;
       }
 
-      const theaterData: any = {
+      const theaterData: Partial<Omit<import('@/types').Theater, '_id'>> & { name: string; address: string; totalSeats: number } = {
         name: formData.name,
         address: formData.address,
+        totalSeats: formData.totalSeats,
       };
       
       if (formData.city) theaterData.city = formData.city;
@@ -68,8 +65,14 @@ export default function CreateTheaterPage() {
 
       toast.success("Tạo rạp thành công!");
       router.push("/admin/theaters");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Lỗi khi tạo rạp");
+    } catch (error: unknown) {
+      toast.error(
+        error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data
+          ? String(error.response.data.message)
+          : "Lỗi khi tạo rạp"
+      );
     } finally {
       setLoading(false);
     }
@@ -91,7 +94,9 @@ export default function CreateTheaterPage() {
             <label className="block text-sm font-medium text-gray-300 mb-2">Hình ảnh rạp</label>
             <div className="flex items-start gap-4">
               {imagePreview && (
-                <img src={imagePreview} alt="Preview" className="w-40 h-40 object-cover rounded-lg" />
+                <div className="w-40 h-40 relative rounded-lg overflow-hidden">
+                  <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                </div>
               )}
               <div className="flex-1">
                 <input
@@ -107,7 +112,9 @@ export default function CreateTheaterPage() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Tên rạp *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Tên rạp <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={formData.name}
@@ -120,7 +127,9 @@ export default function CreateTheaterPage() {
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Địa chỉ *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Địa chỉ <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={formData.address}

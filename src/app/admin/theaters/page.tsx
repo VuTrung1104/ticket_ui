@@ -4,39 +4,24 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { theaterService } from "@/lib";
 import Link from "next/link";
-
-type Theater = {
-  _id: string;
-  name: string;
-  address: string;
-  city?: string;
-  phone?: string;
-  image?: string;
-  totalSeats: number;
-  rows: number[];
-  isActive: boolean;
-};
+import Image from "next/image";
+import type { Theater } from "@/types";
 
 export default function AdminTheatersPage() {
   const [theaters, setTheaters] = useState<Theater[]>([]);
-  const [loading, setLoading] = useState(true);  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCity, setFilterCity] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
   const limit = 10;
   const [page, setPage] = useState(1);  const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     theater: { id: string; name: string } | null;
   }>({ isOpen: false, theater: null });
 
-  useEffect(() => {
-    setPage(1);
-  }, [filterCity]);
-
   const fetchTheaters = async () => {
     try {
       setLoading(true);
       const data = await theaterService.getTheaters();
       setTheaters(data);
-    } catch (error) {
+    } catch {
       toast.error("Lỗi khi tải danh sách rạp");
     } finally {
       setLoading(false);
@@ -47,14 +32,7 @@ export default function AdminTheatersPage() {
     fetchTheaters();
   }, []);
 
-  // Get unique cities
-  const cities = ["all", ...new Set(theaters.map(t => t.city).filter(Boolean))];
-
-  // Filter theaters
-  const filteredTheaters = theaters.filter(theater => {
-    const matchesCity = filterCity === "all" || theater.city === filterCity;
-    return matchesCity;
-  });
+  const filteredTheaters = theaters;
 
   // Pagination
   const totalPages = Math.ceil(filteredTheaters.length / limit);
@@ -70,7 +48,7 @@ export default function AdminTheatersPage() {
       setTheaters(theaters.filter((t) => t._id !== deleteModal.theater?.id));
       toast.success("Đã xóa rạp thành công!");
       setDeleteModal({ isOpen: false, theater: null });
-    } catch (error) {
+    } catch {
       toast.error("Lỗi khi xóa rạp");
     }
   };
@@ -135,23 +113,24 @@ export default function AdminTheatersPage() {
                   paginatedTheaters.map((theater) => (
                     <tr key={theater._id} className="hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4">
-                        {theater.image ? (
-                          <img
-                            src={theater.image}
-                            alt={theater.name}
-                            className="w-20 h-20 object-cover rounded-lg"
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none";
-                              e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                            }}
-                          />
-                        ) : null}
-                        <div className={theater.image ? "hidden" : ""}>
-                          <div className="w-20 h-20 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center">
-                            <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                          </div>
+                        <div className="w-20 h-20 relative rounded-lg overflow-hidden">
+                          {theater.image ? (
+                            <Image
+                              src={theater.image}
+                              alt={theater.name}
+                              fill
+                              className="object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-20 h-20 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center">
+                              <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -172,9 +151,10 @@ export default function AdminTheatersPage() {
                             </svg>
                           </Link>
                           <button
-                            onClick={() => setDeleteModal({ isOpen: true, theater: { id: theater._id, name: theater.name } })}
+                            onClick={() => theater._id && setDeleteModal({ isOpen: true, theater: { id: theater._id, name: theater.name } })}
                             className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
                             title="Xóa"
+                            disabled={!theater._id}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -231,7 +211,7 @@ export default function AdminTheatersPage() {
               </div>
             </div>
             <p className="text-gray-300 mb-6">
-              Bạn có chắc chắn muốn xóa rạp <span className="font-semibold text-white">"{deleteModal.theater?.name}"</span>?
+              Bạn có chắc chắn muốn xóa rạp <span className="font-semibold text-white">&quot;{deleteModal.theater?.name}&quot;</span>?
             </p>
             <div className="flex gap-3">
               <button

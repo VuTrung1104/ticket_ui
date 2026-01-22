@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { userService } from "@/lib";
 import type { User } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
 
-type UserRole = "all" | "user" | "admin";
-type UserStatus = "all" | "active" | "blocked";
+
 
 type UserData = User & {
   firstName?: string;
@@ -21,11 +21,10 @@ type UserData = User & {
 };
 
 export default function AdminUsersPage() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterRole, setFilterRole] = useState<UserRole>("all");
-  const [filterStatus, setFilterStatus] = useState<UserStatus>("all");
+
   const limit = 10;
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({
@@ -43,8 +42,6 @@ export default function AdminUsersPage() {
       const response = await userService.getAllUsers({
         page,
         limit,
-        role: filterRole === "all" ? undefined : filterRole,
-        search: searchTerm || undefined,
       });
       
       // Handle both array response and object with data property
@@ -72,25 +69,20 @@ export default function AdminUsersPage() {
           hasPrevPage: page > 1,
         });
       }
-    } catch (error) {
+    } catch {
       toast.error("Lỗi khi tải danh sách người dùng");
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, [filterRole, limit, page, searchTerm]);
+  }, [limit, page]);
 
   useEffect(() => {
     const timer = setTimeout(fetchUsers, 250);
     return () => clearTimeout(timer);
   }, [fetchUsers]);
 
-  const filteredUsers = users.filter(user => {
-    const matchesStatus = filterStatus === "all" || 
-      (filterStatus === "active" && !user.isLocked) ||
-      (filterStatus === "blocked" && user.isLocked);
-    return matchesStatus;
-  });
+  const filteredUsers = users;
 
   const pageNumbers = Array.from({ length: meta.totalPages || 1 }, (_, i) => i + 1);
 
@@ -133,6 +125,13 @@ export default function AdminUsersPage() {
 
   const handleChangeRole = async (id?: string, currentRole?: string) => {
     if (!id) return;
+    
+    // Security: Prevent admin from changing their own role
+    if (currentUser && (id === currentUser._id || id === currentUser.id)) {
+      toast.error("Bạn không thể thay đổi quyền của chính mình!");
+      return;
+    }
+    
     const safeRole = currentRole === "admin" ? "admin" : "user";
     const newRole = safeRole === "user" ? "admin" : "user";
     try {
@@ -143,7 +142,12 @@ export default function AdminUsersPage() {
         `${newRole === "admin" ? "Người dùng cần đăng xuất và đăng nhập lại để áp dụng quyền mới." : ""}`
       );
     } catch (error) {
-      toast.error("Lỗi khi thay đổi quyền");
+      const errorMessage = error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data
+          ? String(error.response.data.message)
+          : "Lỗi khi thay đổi quyền";
+      toast.error(errorMessage);
     }
   };
 
@@ -272,13 +276,26 @@ export default function AdminUsersPage() {
                       <td className="px-6 py-4">
                         <button
                           onClick={() => handleChangeRole(user._id, user.role)}
+                          disabled={currentUser && (user._id === currentUser._id || user._id === currentUser.id)}
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             user.role === "admin"
                               ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
                               : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                          } hover:bg-opacity-80 transition-all`}
+                          } ${
+                            currentUser && (user._id === currentUser._id || user._id === currentUser.id)
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:bg-opacity-80 cursor-pointer"
+                          } transition-all`}
+                          title={
+                            currentUser && (user._id === currentUser._id || user._id === currentUser.id)
+                              ? "Bạn không thể thay đổi quyền của chính mình"
+                              : "Thay đổi quyền"
+                          }
                         >
                           {user.role === "admin" ? "Admin" : "User"}
+                          {currentUser && (user._id === currentUser._id || user._id === currentUser.id) && (
+                            <span className="ml-1 text-[10px]">(Bạn)</span>
+                          )}
                         </button>
                       </td>
                       <td className="px-6 py-4">

@@ -88,8 +88,7 @@ export default function ShowtimesPage() {
         if (selectedMovie && !availableMovies.find((m) => m._id === selectedMovie)) {
           setSelectedMovie("");
         }
-      } catch (error) {
-        console.error("Error fetching showtimes:", error);
+      } catch {
         setShowtimes([]);
       } finally {
         setLoading(false);

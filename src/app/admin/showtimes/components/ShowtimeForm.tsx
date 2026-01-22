@@ -67,7 +67,7 @@ export function ShowtimeForm({
             className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             required
           >
-            <option value="" className="bg-gray-800">-- Chọn phim --</option>
+            <option value="" className="bg-gray-800">Chọn phim</option>
             {movies.map(movie => (
               <option key={movie._id} value={movie._id} className="bg-gray-800">
                 {movie.title} {movie.duration ? `(${movie.duration} phút)` : ""}
@@ -87,7 +87,7 @@ export function ShowtimeForm({
             className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             required
           >
-            <option value="" className="bg-gray-800">-- Chọn rạp --</option>
+            <option value="" className="bg-gray-800">Chọn rạp</option>
             {theaters.map(theater => (
               <option key={theater._id} value={theater._id} className="bg-gray-800">
                 {theater.name} {theater.city ? `- ${theater.city}` : ""}

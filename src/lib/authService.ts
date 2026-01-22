@@ -60,13 +60,11 @@ export const authService = {
 
   // OAuth
   loginWithGoogle() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
-    window.location.href = `${apiUrl}/auth/google`;
+    window.location.href = `${apiClient.defaults.baseURL}/auth/google`;
   },
 
   loginWithFacebook() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
-    window.location.href = `${apiUrl}/auth/facebook`;
+    window.location.href = `${apiClient.defaults.baseURL}/auth/facebook`;
   },
 
   // OTP

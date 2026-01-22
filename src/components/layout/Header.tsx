@@ -1,15 +1,15 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import useScroll from "@/hooks/useScroll";
-import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { movieService } from "@/lib/movieService";
 
 interface SearchResult {
-  _id: string;
+  _id?: string;
   title: string;
   slug: string;
   posterUrl?: string;
@@ -52,8 +52,7 @@ export default function Header() {
         });
         setSearchResults(response.data || []);
         setShowSearchDropdown(true);
-      } catch (error) {
-        console.error("Search error:", error);
+      } catch {
         setSearchResults([]);
       }
     };
@@ -184,12 +183,13 @@ export default function Header() {
                       onClick={() => handleMovieClick(movie.slug)}
                       className="w-full flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg transition-colors text-left"
                     >
-                      <div className="w-12 h-16 bg-gray-800 rounded overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-16 bg-gray-800 rounded overflow-hidden flex-shrink-0 relative">
                         {movie.posterUrl ? (
-                          <img
+                          <Image
                             src={movie.posterUrl}
                             alt={movie.title}
-                            className="w-full h-full object-cover"
+                            fill
+                            className="object-cover"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">

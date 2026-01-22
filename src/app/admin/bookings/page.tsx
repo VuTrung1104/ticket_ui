@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { bookingService } from "@/lib";
 import type { Booking } from "@/types";
-
-type BookingStatus = "all" | "confirmed" | "pending" | "cancelled";
 
 type BookingData = Booking & {
   bookingDate?: string;
@@ -44,8 +42,6 @@ type BookingData = Booking & {
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<BookingData[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<BookingStatus>("all");
   const [page, setPage] = useState(1);
   const limit = 10;
   const [meta, setMeta] = useState({
@@ -57,23 +53,50 @@ export default function AdminBookingsPage() {
     hasPrevPage: false,
   });
 
-  useEffect(() => {
-    const timer = setTimeout(fetchBookings, 250);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filterStatus, searchTerm]);
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       const response = await bookingService.getAllBookings({
         page,
         limit,
-        status: filterStatus === "all" ? undefined : filterStatus,
-        search: searchTerm || undefined,
       });
       const list = response?.data ?? [];
       const pagination = response?.meta;
-      setBookings(list as BookingData[]);
+      
+      // Transform data to include movie and theater names
+      const transformedList = list.map((booking: any) => {
+        const showtimeData = typeof booking.showtimeId === 'object' ? booking.showtimeId : null;
+        const movieData = showtimeData && typeof showtimeData.movieId === 'object' ? showtimeData.movieId : null;
+        const theaterData = showtimeData && typeof showtimeData.theaterId === 'object' ? showtimeData.theaterId : null;
+        const userData = typeof booking.userId === 'object' ? booking.userId : null;
+        
+        return {
+          ...booking,
+          movie: movieData?.title || 'N/A',
+          theater: theaterData?.name || 'N/A',
+          showtime: showtimeData?.startTime 
+            ? new Date(showtimeData.startTime).toLocaleString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              })
+            : 'N/A',
+          userName: userData?.fullName || userData?.name || 'N/A',
+          userEmail: userData?.email || 'N/A',
+          bookingDate: booking.createdAt 
+            ? new Date(booking.createdAt).toLocaleString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : 'N/A'
+        };
+      });
+      
+      setBookings(transformedList as BookingData[]);
       if (pagination) {
         setMeta({
           total: pagination.total ?? list.length,
@@ -97,7 +120,11 @@ export default function AdminBookingsPage() {
     } catch {
       toast.error("Lỗi khi tải danh sách đặt vé");
     }
-  };
+  }, [page, limit]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   const handleCancelBooking = async (id: string) => {
     if (confirm(`Bạn có chắc muốn hủy đặt vé?`)) {
@@ -105,8 +132,7 @@ export default function AdminBookingsPage() {
         await bookingService.cancelBooking(id);
         await fetchBookings();
         toast.success("Đã hủy đặt vé thành công!");
-      } catch (error) {
-        console.error("Cancel booking error:", error);
+      } catch {
         toast.error("Lỗi khi hủy đặt vé");
       }
     }
@@ -204,12 +230,10 @@ export default function AdminBookingsPage() {
               <thead>
                 <tr className="bg-white/5 border-b border-white/10">
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Mã đặt vé</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Khách hàng</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Phim</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Rạp & Suất chiếu</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Ghế</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Tổng tiền</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Phương thức</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Trạng thái</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Hành động</th>
                 </tr>
@@ -217,7 +241,7 @@ export default function AdminBookingsPage() {
               <tbody className="divide-y divide-white/5">
                 {bookings.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -232,10 +256,6 @@ export default function AdminBookingsPage() {
                       <td className="px-6 py-4">
                         <p className="text-white font-semibold">{booking.bookingCode || booking._id}</p>
                         <p className="text-xs text-gray-400">{booking.bookingDate}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-white font-medium">{booking.userName}</p>
-                        <p className="text-sm text-gray-400">{booking.userEmail}</p>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-white font-medium">{booking.movie}</p>
@@ -255,23 +275,6 @@ export default function AdminBookingsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-white font-semibold">{booking.totalPrice.toLocaleString('vi-VN')}đ</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        {booking.paymentId && booking.paymentId.method ? (
-                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                            booking.paymentId.method?.toLowerCase() === 'momo' ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' :
-                            booking.paymentId.method?.toLowerCase() === 'vnpay' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                            booking.paymentId.method?.toLowerCase() === 'zalopay' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
-                            'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                          }`}>
-                            {booking.paymentId.method?.toLowerCase() === 'momo' ? 'MoMo' :
-                             booking.paymentId.method?.toLowerCase() === 'vnpay' ? 'VNPay' :
-                             booking.paymentId.method?.toLowerCase() === 'zalopay' ? 'ZaloPay' :
-                             booking.paymentId.method}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500 text-xs">Chưa thanh toán</span>
-                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span

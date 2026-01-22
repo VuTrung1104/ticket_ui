@@ -83,8 +83,7 @@ function BookingSuccessContent() {
     try {
       const data = await bookingService.getBookingById(id);
       setBooking(data);
-    } catch (err) {
-      console.error("Failed to fetch booking:", err);
+    } catch {
       setPaymentError("Không thể tải thông tin vé. Vui lòng kiểm tra lại trong mục 'Vé của tôi'.");
     } finally {
       setLoading(false);

@@ -60,8 +60,7 @@ export default function EditShowtimePage() {
         location: t.address || '',
         city: t.city || ''
       })));
-    } catch (error) {
-      console.error("Error fetching data:", error);
+    } catch {
       toast.error("Không thể tải danh sách phim và rạp");
     }
   };
@@ -86,8 +85,7 @@ export default function EditShowtimePage() {
         language: showtime.language || "Tiếng Việt",
         subtitles: showtime.subtitles || "Phụ đề Việt",
       });
-    } catch (error) {
-      console.error("Error fetching showtime:", error);
+    } catch {
       toast.error("Không thể tải thông tin suất chiếu");
       router.push("/admin/showtimes");
     } finally {
@@ -136,7 +134,6 @@ export default function EditShowtimePage() {
       toast.success("Đã cập nhật suất chiếu thành công!");
       router.push("/admin/showtimes");
     } catch (error: unknown) {
-      console.error("Error updating showtime:", error);
       const errorMessage = error instanceof AxiosError ? 
         error.response?.data?.message || "Không thể cập nhật suất chiếu" : "Không thể cập nhật suất chiếu";
       toast.error(errorMessage);

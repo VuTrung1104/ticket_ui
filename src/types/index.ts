@@ -41,6 +41,8 @@ export type Theater = {
   totalSeats: number;
   rows?: number[];
   isActive?: boolean;
+  image?: string;
+  imageUrl?: string;
 };
 
 export type Showtime = {
@@ -64,6 +66,9 @@ export type Showtime = {
   room?: string;
   availableSeats?: number;
   totalSeats?: number;
+  rows?: number;
+  seatsPerRow?: number;
+  bookedSeats?: string[];
 };
 
 export type Seat = {
@@ -92,7 +97,7 @@ export type Booking = {
   totalPrice: number;
   status: "pending" | "confirmed" | "cancelled";
   bookingCode?: string;
-  paymentId?: string;
+  paymentId?: string | Payment; // Can be string (ID) or populated Payment object
   createdAt?: string;
   updatedAt?: string;
 };

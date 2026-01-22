@@ -1,22 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 import { toast } from "sonner";
 import { theaterService } from "@/lib";
 import { uploadService } from "@/lib/uploadService";
-
-type Theater = {
-  _id: string;
-  name: string;
-  address: string;
-  city?: string;
-  phone?: string;
-  image?: string;
-  totalSeats: number;
-  rows: number[];
-  isActive: boolean;
-};
 
 export default function EditTheaterPage() {
   const router = useRouter();
@@ -38,13 +27,7 @@ export default function EditTheaterPage() {
     image: "",
   });
 
-  useEffect(() => {
-    if (id) {
-      fetchTheater();
-    }
-  }, [id]);
-
-  const fetchTheater = async () => {
+  const fetchTheater = useCallback(async () => {
     try {
       setFetchLoading(true);
       const data = await theaterService.getTheaterById(id);
@@ -60,13 +43,19 @@ export default function EditTheaterPage() {
       if (data.image) {
         setImagePreview(data.image);
       }
-    } catch (error) {
+    } catch {
       toast.error("Lỗi khi tải thông tin rạp");
       router.push("/admin/theaters");
     } finally {
       setFetchLoading(false);
     }
-  };
+  }, [id, router]);
+
+  useEffect(() => {
+    if (id) {
+      fetchTheater();
+    }
+  }, [id, fetchTheater]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -78,11 +67,6 @@ export default function EditTheaterPage() {
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleRowsChange = (value: string) => {
-    const rows = value.split(",").map((r) => parseInt(r.trim())).filter((r) => !isNaN(r));
-    setFormData({ ...formData, rows });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,8 +93,14 @@ export default function EditTheaterPage() {
 
       toast.success("Cập nhật rạp thành công!");
       router.push("/admin/theaters");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Lỗi khi cập nhật rạp");
+    } catch (error: unknown) {
+      toast.error(
+        error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response &&
+        error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data
+          ? String(error.response.data.message)
+          : "Lỗi khi cập nhật rạp"
+      );
     } finally {
       setLoading(false);
     }
@@ -143,7 +133,9 @@ export default function EditTheaterPage() {
             <label className="block text-sm font-medium text-gray-300 mb-2">Hình ảnh rạp</label>
             <div className="flex items-start gap-4">
               {imagePreview && (
-                <img src={imagePreview} alt="Preview" className="w-40 h-40 object-cover rounded-lg" />
+                <div className="w-40 h-40 relative rounded-lg overflow-hidden">
+                  <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                </div>
               )}
               <div className="flex-1">
                 <input
@@ -159,7 +151,9 @@ export default function EditTheaterPage() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Tên rạp *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Tên rạp <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={formData.name}
@@ -172,7 +166,9 @@ export default function EditTheaterPage() {
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Địa chỉ *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Địa chỉ <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={formData.address}
