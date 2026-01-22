@@ -5,6 +5,35 @@ import { toast } from "sonner";
 import { bookingService } from "@/lib";
 import type { Booking } from "@/types";
 
+// Type for populated booking response from backend
+interface PopulatedBooking {
+  _id?: string;
+  id?: string;
+  bookingCode: string;
+  showtimeId: {
+    movieId: {
+      title: string;
+      [key: string]: unknown;
+    };
+    theaterId: {
+      name: string;
+      [key: string]: unknown;
+    };
+    startTime: string;
+    [key: string]: unknown;
+  };
+  userId: {
+    fullName: string;
+    email?: string;
+    [key: string]: unknown;
+  };
+  selectedSeats?: string[];
+  totalPrice: number;
+  status: string;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
 type BookingData = Booking & {
   bookingDate?: string;
   userName?: string;
@@ -59,11 +88,11 @@ export default function AdminBookingsPage() {
         page,
         limit,
       });
-      const list = response?.data ?? [];
+      const list = (response?.data ?? []) as unknown as PopulatedBooking[];
       const pagination = response?.meta;
       
       // Transform data to include movie and theater names
-      const transformedList = list.map((booking: any) => {
+      const transformedList = list.map((booking) => {
         const showtimeData = typeof booking.showtimeId === 'object' ? booking.showtimeId : null;
         const movieData = showtimeData && typeof showtimeData.movieId === 'object' ? showtimeData.movieId : null;
         const theaterData = showtimeData && typeof showtimeData.theaterId === 'object' ? showtimeData.theaterId : null;
@@ -96,7 +125,7 @@ export default function AdminBookingsPage() {
         };
       });
       
-      setBookings(transformedList as BookingData[]);
+      setBookings(transformedList as unknown as BookingData[]);
       if (pagination) {
         setMeta({
           total: pagination.total ?? list.length,

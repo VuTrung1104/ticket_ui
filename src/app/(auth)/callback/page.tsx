@@ -22,7 +22,7 @@ function CallbackPageContent() {
       if (user) {
         try {
           localStorage.setItem("user", decodeURIComponent(user));
-        } catch (error) {
+        } catch {
           // Ignore invalid user data
         }
       }

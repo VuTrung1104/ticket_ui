@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .finally(() => {
             setLoading(false);
           });
-      } catch (error) {
+      } catch {
         setLoading(false);
       }
     } else {

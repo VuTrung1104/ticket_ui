@@ -276,7 +276,7 @@ export default function AdminUsersPage() {
                       <td className="px-6 py-4">
                         <button
                           onClick={() => handleChangeRole(user._id, user.role)}
-                          disabled={currentUser && (user._id === currentUser._id || user._id === currentUser.id)}
+                          disabled={Boolean(currentUser && (user._id === currentUser._id || user._id === currentUser.id))}
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             user.role === "admin"
                               ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
