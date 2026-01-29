@@ -4,6 +4,7 @@ import { Heart, Info } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import PosterWithHover from "./PosterWithHover";
 import { FaTicketAlt } from "react-icons/fa";
 
@@ -46,8 +47,9 @@ export default function MovieCard({
   useEffect(() => {
     // Check if in wishlist
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user.id && slug) {
-      const wishlist: WishlistMovie[] = JSON.parse(localStorage.getItem(`wishlist_${user.id}`) || "[]");
+    const userId = user.id || user._id;
+    if (userId && slug) {
+      const wishlist: WishlistMovie[] = JSON.parse(localStorage.getItem(`wishlist_${userId}`) || "[]");
       setIsInWishlist(wishlist.some((m) => m.slug === slug));
     }
   }, [slug]);
@@ -57,14 +59,15 @@ export default function MovieCard({
     e.stopPropagation();
     
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!user.id) {
-      alert("Vui lòng đăng nhập để thêm vào yêu thích!");
+    const userId = user.id || user._id;
+    if (!userId) {
+      toast.error("Vui lòng đăng nhập để thêm vào yêu thích!");
       return;
     }
 
     if (!slug) return;
 
-    const wishlistKey = `wishlist_${user.id}`;
+    const wishlistKey = `wishlist_${userId}`;
     const wishlist: WishlistMovie[] = JSON.parse(localStorage.getItem(wishlistKey) || "[]");
     
     if (isInWishlist) {
@@ -72,6 +75,7 @@ export default function MovieCard({
       const updated = wishlist.filter((m) => m.slug !== slug);
       localStorage.setItem(wishlistKey, JSON.stringify(updated));
       setIsInWishlist(false);
+      toast.success("Đã xóa khỏi danh sách yêu thích!");
     } else {
       // Add to wishlist
       const movieData = {
@@ -87,6 +91,7 @@ export default function MovieCard({
       wishlist.push(movieData);
       localStorage.setItem(wishlistKey, JSON.stringify(wishlist));
       setIsInWishlist(true);
+      toast.success("Đã thêm vào danh sách yêu thích!");
     }
   };
 

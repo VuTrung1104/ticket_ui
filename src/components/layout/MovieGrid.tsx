@@ -32,9 +32,9 @@ const generateSlug = (title: string): string => {
 
 export default function MovieGrid() {
   const { data, error, isLoading } = useSWR<MovieData[]>(
-    "movies-home",
+    "movies-home-v2",
     async () => {
-      const response = await movieService.getMovies({ limit: 8 });
+      const response = await movieService.getMovies({ limit: 100 });
       return (response.data || []) as unknown as MovieData[];
     },
     {
@@ -47,8 +47,8 @@ export default function MovieGrid() {
     }
   );
 
-  const nowPlaying = (data || []).filter((m) => m.status === "now-showing");
-  const comingSoon = (data || []).filter((m) => m.status === "coming-soon");
+  const nowPlaying = (data || []).filter((m) => m.status === "now-showing").slice(0, 10);
+  const comingSoon = (data || []).filter((m) => m.status === "coming-soon").slice(0, 10);
 
   if (isLoading) {
     return (

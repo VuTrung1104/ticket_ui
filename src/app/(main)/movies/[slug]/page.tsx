@@ -141,8 +141,9 @@ export default function MovieDetailPage() {
   useEffect(() => {
     if (!movie || !movie._id) return;
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user.id) {
-      const wishlist = JSON.parse(localStorage.getItem(`wishlist_${user.id}`) || "[]") as WishlistMovie[];
+    const userId = user.id || user._id;
+    if (userId) {
+      const wishlist = JSON.parse(localStorage.getItem(`wishlist_${userId}`) || "[]") as WishlistMovie[];
       setIsInWishlist(wishlist.some((m) => m._id === movie._id));
     }
   }, [movie]);
@@ -171,12 +172,13 @@ export default function MovieDetailPage() {
 
   const toggleWishlist = () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!user.id) {
-      alert("Vui lòng đăng nhập để thêm vào yêu thích!");
+    const userId = user.id || user._id;
+    if (!userId) {
+      toast.error("Vui lòng đăng nhập để thêm vào yêu thích!");
       return;
     }
 
-    const wishlistKey = `wishlist_${user.id}`;
+    const wishlistKey = `wishlist_${userId}`;
     const wishlist = JSON.parse(localStorage.getItem(wishlistKey) || "[]") as WishlistMovie[];
     
     if (isInWishlist) {
@@ -184,6 +186,7 @@ export default function MovieDetailPage() {
       const updated = wishlist.filter((m) => m._id !== movie._id);
       localStorage.setItem(wishlistKey, JSON.stringify(updated));
       setIsInWishlist(false);
+      toast.success("Đã xóa khỏi danh sách yêu thích!");
     } else {
       // Add to wishlist
       if (!movie._id) return;
@@ -201,6 +204,7 @@ export default function MovieDetailPage() {
       wishlist.push(movieData);
       localStorage.setItem(wishlistKey, JSON.stringify(wishlist));
       setIsInWishlist(true);
+      toast.success("Đã thêm vào danh sách yêu thích!");
     }
   };
 

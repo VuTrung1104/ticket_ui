@@ -450,8 +450,16 @@ export default function ProfilePage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-xl font-bold">{movieTitle}</h3>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30">
-                          Đã xác nhận
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            ticket.status === "confirmed"
+                              ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                              : ticket.status === "pending"
+                              ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                              : "bg-red-500/20 text-red-400 border border-red-500/30"
+                          }`}
+                        >
+                          {ticket.status === "confirmed" ? "Đã xác nhận" : ticket.status === "pending" ? "Chờ xác nhận" : "Đã hủy"}
                         </span>
                       </div>
                       <div className="space-y-2 text-sm text-gray-300">
@@ -478,12 +486,6 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex flex-col justify-between items-end">
                       <div className="text-2xl font-bold text-red-500">{totalPrice.toLocaleString("vi-VN")}đ</div>
-                      <Link 
-                        href={`/booking-success?bookingId=${bookingId}`}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-all text-sm inline-block text-center"
-                      >
-                        Xem chi tiết
-                      </Link>
                     </div>
                   </div>
                 </div>
@@ -541,13 +543,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-red-500 mb-2">{booking.totalPrice?.toLocaleString('vi-VN')}đ</div>
-                      <button 
-                        onClick={() => router.push(`/booking/${booking._id}`)}
-                        className="text-sm text-gray-400 hover:text-white transition-colors"
-                      >
-                        Xem chi tiết
-                      </button>
+                      <div className="text-2xl font-bold text-red-500">{booking.totalPrice?.toLocaleString('vi-VN')}đ</div>
                     </div>
                   </div>
                 </div>

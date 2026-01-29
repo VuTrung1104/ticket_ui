@@ -30,7 +30,8 @@ export default function WishlistPage() {
       return;
     }
 
-    const saved = localStorage.getItem(`wishlist_${user.id}`);
+    const userId = user.id || user._id;
+    const saved = localStorage.getItem(`wishlist_${userId}`);
     if (saved) {
       try {
         setWishlist(JSON.parse(saved));
@@ -44,7 +45,8 @@ export default function WishlistPage() {
     const updated = wishlist.filter((m) => (m._id || m.id) !== movieId);
     setWishlist(updated);
     if (user) {
-      localStorage.setItem(`wishlist_${user.id}`, JSON.stringify(updated));
+      const userId = user.id || user._id;
+      localStorage.setItem(`wishlist_${userId}`, JSON.stringify(updated));
     }
   };
 

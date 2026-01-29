@@ -35,7 +35,7 @@ export default function CreateMoviePage() {
     rating: "",
     language: "Tiếng Việt",
     ageRating: "T13",
-    status: "coming-soon" as "now-showing" | "coming-soon",
+    status: "now-showing" as "now-showing" | "coming-soon" | "ended",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,8 +219,8 @@ export default function CreateMoviePage() {
               </div>
             </div>
 
-            {/* Language & Age Rating */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Language & Age Rating & Status */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Ngôn ngữ</label>
                 <input
@@ -242,6 +242,19 @@ export default function CreateMoviePage() {
                   <option value="T16">T16 - Từ 16 tuổi</option>
                   <option value="T18">T18 - Từ 18 tuổi</option>
                   <option value="C">C - Cấm dưới 18</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Trạng thái *</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value as "now-showing" | "coming-soon" | "ended"})}
+                  className="w-full bg-gray-800 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="now-showing">Đang chiếu</option>
+                  <option value="coming-soon">Sắp chiếu</option>
+                  <option value="ended">Đã kết thúc</option>
                 </select>
               </div>
             </div>

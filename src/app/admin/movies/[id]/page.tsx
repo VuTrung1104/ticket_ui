@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
+import { mutate } from "swr";
 import { movieService } from "@/lib/movieService";
 import ImageUpload from "@/components/upload/ImageUpload";
 import { GenrePicker } from "../components/GenrePicker";
@@ -105,6 +106,10 @@ export default function EditMoviePage() {
       };
 
       await movieService.updateMovie(movieId, movieData);
+      
+      // Revalidate all movie-related SWR caches
+      mutate(key => typeof key === 'string' && key.startsWith('admin-movies'));
+      
       toast.success("Đã cập nhật phim thành công!");
       router.push("/admin/movies");
     } catch (error: unknown) {
@@ -316,8 +321,8 @@ export default function EditMoviePage() {
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as "now-showing" | "coming-soon" | "ended" })}
                 className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="coming-soon" className="bg-gray-800">Sắp chiếu</option>
                 <option value="now-showing" className="bg-gray-800">Đang chiếu</option>
+                <option value="coming-soon" className="bg-gray-800">Sắp chiếu</option>
                 <option value="ended" className="bg-gray-800">Đã kết thúc</option>
               </select>
             </div>

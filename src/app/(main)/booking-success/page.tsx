@@ -68,7 +68,8 @@ function BookingSuccessContent() {
       return;
     }
 
-    const bookings = JSON.parse(localStorage.getItem(`user_bookings_${user.id}`) || "[]") as BookingData[];
+    const userId = user.id || user._id;
+    const bookings = JSON.parse(localStorage.getItem(`user_bookings_${userId}`) || "[]") as BookingData[];
     const foundBooking = bookings.find((b) => b.ticketId === ticketId);
     
     if (foundBooking) {

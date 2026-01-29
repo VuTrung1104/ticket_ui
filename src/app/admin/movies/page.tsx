@@ -214,15 +214,15 @@ export default function AdminMoviesPage() {
                     <td className="px-6 py-4 text-center text-gray-300">{movie.duration} phút</td>
                     <td className="px-6 py-4 text-center">
                       {movie.status === "now-showing" ? (
-                        <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full border border-green-500/30">
+                        <span className="inline-block px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full border border-green-500/30 whitespace-nowrap">
                           Đang chiếu
                         </span>
                       ) : movie.status === "coming-soon" ? (
-                        <span className="px-3 py-1 bg-purple-500/20 text-purple-400 text-sm rounded-full border border-purple-500/30">
+                        <span className="inline-block px-3 py-1 bg-purple-500/20 text-purple-400 text-sm rounded-full border border-purple-500/30 whitespace-nowrap">
                           Sắp chiếu
                         </span>
                       ) : (
-                        <span className="px-3 py-1 bg-gray-500/20 text-gray-400 text-sm rounded-full border border-gray-500/30">
+                        <span className="inline-block px-3 py-1 bg-gray-500/20 text-gray-400 text-sm rounded-full border border-gray-500/30 whitespace-nowrap">
                           Đã kết thúc
                         </span>
                       )}
