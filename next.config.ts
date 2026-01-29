@@ -15,7 +15,12 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
     ],
+    formats: ["image/webp"],
+    minimumCacheTTL: 60,
   },
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
 };
 
 const withAnalyzer = withBundleAnalyzer({ enabled: process.env.ANALYZE === "true" });

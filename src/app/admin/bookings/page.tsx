@@ -86,7 +86,7 @@ export default function AdminBookingsPage() {
     try {
       const response = await bookingService.getAllBookings({
         page,
-        limit,
+        limit: 8,
       });
       const list = (response?.data ?? []) as unknown as PopulatedBooking[];
       const pagination = response?.meta;

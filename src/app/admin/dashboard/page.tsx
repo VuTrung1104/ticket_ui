@@ -74,9 +74,9 @@ export default function AdminDashboardPage() {
   const fetchStats = async () => {
     try {
       const [moviesRes, theatersRes, bookingsRes] = await Promise.all([
-        movieService.getMovies({ limit: 100 }),
+        movieService.getMovies({ limit: 20 }),
         theaterService.getTheaters(),
-        bookingService.getAllBookings({ limit: 100 }),
+        bookingService.getAllBookings({ limit: 50 }),
       ]);
 
       const bookings = (bookingsRes.data || []) as BookingData[];

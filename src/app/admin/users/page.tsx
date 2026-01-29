@@ -16,7 +16,6 @@ type UserData = User & {
   role?: User["role"] | string;
   status?: string;
   isLocked?: boolean;
-  totalBookings?: number;
   createdAt?: string;
 };
 
@@ -25,7 +24,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const limit = 10;
+  const limit = 8;
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({
     total: 0,
@@ -78,7 +77,7 @@ export default function AdminUsersPage() {
   }, [limit, page]);
 
   useEffect(() => {
-    const timer = setTimeout(fetchUsers, 250);
+    const timer = setTimeout(fetchUsers, 100);
     return () => clearTimeout(timer);
   }, [fetchUsers]);
 
@@ -229,14 +228,13 @@ export default function AdminUsersPage() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Vai trò</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Trạng thái</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Ngày tham gia</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Số vé đã đặt</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Hành động</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-4">
                         <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
                         <p className="text-gray-400 text-lg">Đang tải danh sách người dùng...</p>
@@ -245,7 +243,7 @@ export default function AdminUsersPage() {
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center gap-2">
                         <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -311,9 +309,6 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-6 py-4 text-gray-300 text-sm">
                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-gray-300 text-sm text-center">
-                        {user.totalBookings || 0} vé
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-2">

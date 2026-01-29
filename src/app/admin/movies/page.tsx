@@ -1,68 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
+import useSWR from "swr";
 import { movieService } from "@/lib/movieService";
-import type { Movie } from "@/types";
 
 export default function AdminMoviesPage() {
-  const [movies, setMovies] = useState<Movie[]>([]);
   const [page, setPage] = useState(1);
   const limit = 10;
-  const [meta, setMeta] = useState({
-    total: 0,
-    page: 1,
-    limit,
-    totalPages: 1,
-    hasNextPage: false,
-    hasPrevPage: false,
-  });
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; movie: { id: string; title: string } | null }>({
     isOpen: false,
     movie: null,
   });
 
-  useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        const response = await movieService.getMovies({
-          limit,
-          page,
-        });
-        const list = response?.data ?? [];
-        const pagination = response?.meta;
-        setMovies(list);
-        if (pagination) {
-          setMeta({
-            total: pagination.total ?? list.length,
-            page: pagination.page ?? page,
-            limit: pagination.limit ?? limit,
-            totalPages: pagination.totalPages ?? 1,
-            hasNextPage: pagination.hasNextPage ?? false,
-            hasPrevPage: pagination.hasPrevPage ?? false,
-          });
-        } else {
-          const total = list.length;
-          setMeta({
-            total,
-            page,
-            limit,
-            totalPages: Math.max(1, Math.ceil(total / limit)),
-            hasNextPage: false,
-            hasPrevPage: page > 1,
-          });
-        }
-      } catch {
-        toast.error("Không thể tải danh sách phim");
-        setMovies([]);
-      }
-    };
+  const { data: response, mutate } = useSWR(
+    `admin-movies-${page}`,
+    async () => movieService.getMovies({ limit, page }),
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
+    }
+  );
 
-    const timer = setTimeout(fetchMovies, 300);
-    return () => clearTimeout(timer);
-  }, [page, limit]);
+  const movies = response?.data ?? [];
+  const pagination = response?.meta;
+  const meta = pagination ? {
+    total: pagination.total ?? movies.length,
+    page: pagination.page ?? page,
+    limit: pagination.limit ?? limit,
+    totalPages: pagination.totalPages ?? 1,
+    hasNextPage: pagination.hasNextPage ?? false,
+    hasPrevPage: pagination.hasPrevPage ?? false,
+  } : {
+    total: movies.length,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(movies.length / limit)),
+    hasNextPage: false,
+    hasPrevPage: page > 1,
+  };
 
   const filteredMovies = movies;
 
@@ -77,7 +55,7 @@ export default function AdminMoviesPage() {
     
     try {
       await movieService.deleteMovie(deleteModal.movie.id);
-      setMovies(movies.filter(m => m._id !== deleteModal.movie!.id));
+      mutate();
       toast.success("Đã xóa phim thành công!");
       setDeleteModal({ isOpen: false, movie: null });
     } catch {

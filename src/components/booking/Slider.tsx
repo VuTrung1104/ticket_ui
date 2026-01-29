@@ -64,6 +64,9 @@ export default function Slider() {
             fill
             priority={activeIndex === 0}
             sizes="100vw"
+            quality={85}
+            placeholder="blur"
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMTgxYjI0Ii8+PC9zdmc+"
             loading={activeIndex === 0 ? "eager" : "lazy"}
             className="object-cover"
           />
