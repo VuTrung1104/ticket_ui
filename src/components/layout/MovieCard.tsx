@@ -119,6 +119,8 @@ export default function MovieCard({
               alt={title}
               width={400}
               height={200}
+              loading="lazy"
+              quality={75}
               className="w-full h-40 object-cover rounded-t-2xl"
             />
           </div>

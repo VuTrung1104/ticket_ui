@@ -34,11 +34,11 @@ export default function MovieGrid() {
   const { data, error, isLoading } = useSWR<MovieData[]>(
     "movies-home-v2",
     async () => {
-      const response = await movieService.getMovies({ limit: 100 });
+      const response = await movieService.getMovies({ limit: 20 });
       return (response.data || []) as unknown as MovieData[];
     },
     {
-      dedupingInterval: 10 * 60 * 1000,
+      dedupingInterval: 30 * 60 * 1000,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       shouldRetryOnError: true,
